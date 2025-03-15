@@ -1,10 +1,9 @@
 #include "pid.h"
+#include "init.h"
 #include <Arduino.h>
-#define DAC_RANGE 4095
-#define LED_PIN 15
 
 pid::pid(
-        double _h,     // Sampling time constant     
+        float _h,     // Sampling time constant     
         float _k,       // Proportional gain
         float _ki,      // Integral gain
         float _kd,      // Derivative gain
@@ -21,22 +20,26 @@ pid::pid(
 
 pid::~pid() {}
 
-double pid::feed_backward(float ref, float out, float G) { //possibly feed in disturbances 'd'
+float pid::feed_backward(float ref, float out, float G,float dist) { //possibly feed in disturbances 'd'
     y[1] = out; 
     P[1] = k * (ref - y[1]);                       // P term
+    Serial.print("prop "); Serial.println(P[1]); 
     D[1] = ad * D[0] - bd * (y[1] - y[0]);         // D term (fixed semicolon)
+    Serial.print("derr "); Serial.println(D[1]); 
     u[2] = (P[1] - P[0]) + (I[1] - I[0]) + (D[1] - D[0]); // Delta u
     u[1] = u[2] + u[0];                            // u[2] -> delta u, u[1] -> tk, u[0] -> tk-1
+    Serial.print("miu "); Serial.println(u[1]); 
     
     // Limit control with optional feed-forward
     u[3] = u[1]; // + (ref - d) / G;               // Feed-forward (if needed)
     wind_up(u[3]);                                // Handle windup
-    return u[3]*G;
+    Serial.print("miu clamp "); Serial.println(u[3]); 
+    return (u[3] - dist)/G;
 }
 
 void pid::housekeep(float ref) {
     I[1] = I[0] + bi1 * (ref - y[1]) + es * tt;   // I term, including anti-windup error
-
+    Serial.print("integral "); Serial.println(I[1]); 
     // Term shift and housekeeping
     P[0] = P[1];
     D[0] = D[1];

@@ -1,5 +1,6 @@
 #ifndef PID_H
 #define PID_H
+#include "init.h"
 
 class pid 
 {
@@ -13,7 +14,7 @@ class pid
     float kd;// derrivative gain
     float ki;// integral gain
     int N;   // derrivative hyper param 8 - 20
-    double h;// sampling time constant
+    float h;// sampling time constant
     float tt;// anti-wind up constant, adjustable if needed
 
     //internal variables
@@ -32,7 +33,7 @@ class pid
 
     //constructor
     explicit pid(
-        double _h,          // Sampling time constant
+        float _h,          // Sampling time constant
         float _k = 1,       // Proportional gain
         float _ki = 0.1,    // Integral gain
         float _kd = 0,      // Derivative gain
@@ -44,7 +45,7 @@ class pid
     //destructor
     ~pid();
 
-    double feed_backward(float ref, float out, float G);
+    float feed_backward(float ref, float out, float G,float dist);
     void housekeep(float ref);
     void pid_params();
     void wind_up(float& u_fb);

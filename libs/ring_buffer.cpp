@@ -1,12 +1,7 @@
-//
-//  RingBuffer.cpp
-//
-//  Created by Jacob Schwartz on 10/23/17.
-//
-
 #include "ring_buffer.h"
 #include <Arduino.h>
 #include <cstring>
+#include "init.h"
 
 ring_buffer::ring_buffer() {}
 
@@ -17,25 +12,25 @@ void ring_buffer::push(data_reads* data) {
 }
 
 data_reads* ring_buffer::get(int offset) { // WHEN CALLED WITH 'TAIL_I' SHOULD RETURN LAST WRITTEN
-    if (head_i + offset >= BUF_SIZE)
-        return &buffer[head_i + offset - BUF_SIZE]; // pointer to struct
+    if (head_i + offset >= BUFFER)
+        return &buffer[head_i + offset - BUFFER]; // pointer to struct
     return &buffer[head_i + offset]; // pointer to struct
 }
 
 void ring_buffer::increment(int& i) const {
-    i = (i + 1 < BUF_SIZE) ? (i + 1) : (0);
+    i = (i + 1 < BUFFER) ? (i + 1) : (0);
 }
 void ring_buffer::decrement(int& i) const {
-    i = (i - 1 >= 0) ? (i - 1) : (BUF_SIZE - 1);
+    i = (i - 1 >= 0) ? (i - 1) : (BUFFER - 1);
 }
 void ring_buffer::print_buff() {
-    for (int j = 0 ; j < BUF_SIZE ; j++) {
+    for (int j = 0 ; j < BUFFER ; j++) {
         data_reads* data_print = get(tail_i +j);
         //Serial Print
-        Serial.print("time :"); Serial.print (data_print->time);
         Serial.print("out :"); Serial.print (data_print->out);
-        Serial.print("ref :"); Serial.print(data_print->ref);
         Serial.print("u :"); Serial.println(data_print->u);
+        Serial.print("ref :"); Serial.print(data_print->ref);
+        Serial.print("time :"); Serial.print (data_print->time);
     }
 }
 

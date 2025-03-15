@@ -1,25 +1,11 @@
-//
-//  buffer.hpp
-//
-//  Created by Jacob Schwartz on 10/23/17.
-//
-
 #ifndef RING_BUFFER_H
 #define RING_BUFFER_H
-#define BUFFER 100;
-
-struct data_reads {
-    double time;
-    double out;
-    int ref;
-    double u;
-};
+#include "init.h"
 
 class ring_buffer {
 private:
-    const static int BUF_SIZE = BUFFER;
     //data_reads* data_print = NULL;
-    data_reads buffer[BUF_SIZE];
+    data_reads buffer[BUFFER];
     int head_i = 0;
     int tail_i = 0;
     bool is_empty = true;

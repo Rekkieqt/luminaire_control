@@ -3,6 +3,7 @@
 #include <cstring>
 #include "init.h"
 
+
 ring_buffer::ring_buffer() {}
 
 void ring_buffer::push(data_reads* data) {

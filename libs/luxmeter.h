@@ -1,6 +1,7 @@
 #ifndef LUXMETER_H
 #define LUXMETER_H
-#include "ring_buffer.h"
+#include <Arduino.h>
+#include "luxmeter.h"
 #include "init.h"
 
 class luxmeter 

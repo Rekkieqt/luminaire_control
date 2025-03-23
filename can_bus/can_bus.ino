@@ -1,9 +1,10 @@
-//#include "luxmeter.h"
-//#include "pid.h"
-#include "init.h"
 #include "can.h"
-//#include "ring_buffer.h"
-#include "mcp2515.h"  // Ensure this library is included
+#include "mcp2515.h"
+#include "luxmeter.h"
+#include "pid.h"
+#include "comms.h"
+#include "ring_buffer.h"
+#include "init.h"
 
 pico_unique_board_id_t pico_board_id; // Full ID
 uint8_t node_id;                 			// Short ID
@@ -16,7 +17,7 @@ volatile bool time_to_write {false}; // receive msg flat
 
 msg_to_can inner_frm_core0;
 msg_to_can inner_frm_core1;
-
+canbus_comm msger;
 bool timer_seq( struct repeating_timer *t ){ 
 	time_to_write = true;
 	return true;
@@ -27,6 +28,38 @@ void read_interrupt(uint gpio, uint32_t events) {
 	got_irq = true;
 }
 
+void setup() {
+	pico_get_unique_board_id(&pico_board_id); // might not be needed
+	node_id = pico_board_id.id[7]; //check
+	Serial.begin();
+  add_repeating_timer_ms( -50, timer_seq, NULL, &write_timer); //xx Hz	
+}
+
+void loop() {
+	//loop to gen n send can frames
+	if(time_to_write) {
+		time_to_write = false; 
+		msger.send_msg(node_id,BROADCAST,counter++,&inner_frm_core0);
+  	}
+  	msger.recv_msg(&inner_frm_core0);
+	msger.process_msg_core0(&inner_frm_core0);
+}
+
+void setup1() {
+	Serial.begin();
+	canbuz.reset();
+	canbuz.setBitrate(CAN_1000KBPS);
+	canbuz.setNormalMode();
+	gpio_set_irq_enabled_with_callback( INTpin, GPIO_IRQ_EDGE_FALL, true, &read_interrupt );
+}
+
+void loop1() {
+	msger.process_can_core1(&inner_frm_core1,&canbuz,got_irq);
+	msger.recv_msg(&inner_frm_core1);
+	msger.send_can(&inner_frm_core1,&canbuz); 
+}
+
+/*
 void inner_frm_to_fifo(msg_to_can* inner_frame) {
 	for(int i = 0; i < sizeof(inner_frame->in_msg) / sizeof(uint32_t); i++) { 
 		rp2040.fifo.push_nb(inner_frame->in_msg[i]);
@@ -122,35 +155,4 @@ void process_msg_core0(msg_to_can* inner_frame) { //receive can thru fifo, proce
 		}
 	}
 }
-
-void setup() {
-	pico_get_unique_board_id(&pico_board_id); // might not be needed
-	node_id = pico_board_id.id[7]; //check
-	Serial.begin();
-  add_repeating_timer_ms( -50, timer_seq, NULL, &write_timer); //xx Hz	
-}
-
-void loop() {
-	//loop to gen n send can frames
-	if(time_to_write) {
-		time_to_write = false; 
-		send_msg(node_id,BROADCAST,counter++,&inner_frm_core0);
-  	}
-  	recv_msg(&inner_frm_core0);
-	process_msg_core0(&inner_frm_core0);
-}
-
-void setup1() {
-	Serial.begin();
-	canbuz.reset();
-	canbuz.setBitrate(CAN_1000KBPS);
-	canbuz.setNormalMode();
-	gpio_set_irq_enabled_with_callback( INTpin, GPIO_IRQ_EDGE_FALL, true, &read_interrupt );
-}
-
-void loop1() {
-	process_can_core1(&inner_frm_core1,&canbuz,got_irq);
-	recv_msg(&inner_frm_core1);
-	send_can(&inner_frm_core1,&canbuz); 
-}
-
+*/

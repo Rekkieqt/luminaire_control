@@ -1,7 +1,6 @@
-#include "luxmeter.h"
-#include "ring_buffer.h"
-#include "init.h"
 #include <Arduino.h>
+#include "luxmeter.h"
+#include "init.h"
 
 luxmeter::luxmeter(
   int _R0, int Nf)

@@ -14,7 +14,7 @@ luxmeter luxm(R0, Nfilter);
 pid wallee(1.0f/Fs, 40 , 5 , 0.01, 2); //kp 40 //ki 2
 sim observer;
 
-bool control_seq( struct repeating_timer *t ){  
+volatile bool control_seq( struct repeating_timer *t ){  
   // control sequence
   current_data.time = millis();
   current_data.out = luxm.get_lux();

@@ -27,6 +27,7 @@ typedef unsigned long __u32;
  * bit 30   : remote transmission request flag (1 = rtr frame)
  * bit 31   : frame format flag (0 = standard 11 bit, 1 = extended 29 bit)
  */
+ 
 typedef __u32 canid_t;
 
 #define CAN_SFF_ID_BITS     11

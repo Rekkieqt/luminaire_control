@@ -58,6 +58,18 @@ int ring_buffer::pop() { // SHOUDLNT NEED THIS
     
     return val;
 }
+void ring_buffer::pop(data_reads* data) {
+    if (is_empty) {
+        return; // Nothing to pop
+    }
+
+    memcpy(data, &buffer[head_i], sizeof(data_reads));  // Copy data to output
+    increment(head_i); // Move head forward
+
+    if (head_i == tail_i) {
+        is_empty = true; // Buffer is now empty
+    }
+}
 void ring_buffer::clear() {
     head_i = 0;
     tail_i = BUF_SIZE - 1;

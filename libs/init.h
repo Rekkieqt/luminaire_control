@@ -1,20 +1,34 @@
 #ifndef init_H
 #define init_H
 #include <cstdint>
+#include "can.h"
 
 enum static_parameters {
     BUFFER = 1000, //edit to fit 1 min of data
+    R1 = 10000,
+    Rled = 47,
     DAC_RES = 12,
     CAP1 = 10,
     WRITE_FREQ = 60000,
-    LED_PIN = 15,
-    DAC_RANGE = 4095,
-    R0 = 280000,
+    LED_PIN = 15, // 
+    DAC_RANGE = 4095, // write and read val
+    R0 = 280000, // ldr at 10 lux
     Fs = 100,     //samplimg frequency
-    MSG_SIZE = 4,  //
-    Nfilter = 6,
-    R1 = 10000,
+    MSG_SIZE = 8,  //
+    Nfilter = 6, //measuring vout
     ONE_SEC_MS = 1000
+};
+
+enum inr_frm_header_types {
+    //core0 to core1
+    SEND_REG = 1,
+    ERR_REQ = 2,
+    ACK = 3,
+    BROADCAST = 4,
+    //core1 to core0
+    ERR_INFO = 1,
+    STAND_RECV = 2,
+    RTR_FRAME = 3
 };
 
 enum canbus_parameters {
@@ -26,8 +40,24 @@ enum canbus_parameters {
     rxf2 = 0,
     rxf3 = 0,
     rxf4 = 0,
-    rxf5 = 0
+    rxf5 = 0,
     // init params
+    RXpin = 6,
+    TXpin = 5,
+    CSpin = 7,
+    SCKpin = 4,
+    INTpin = 9,
+    SPIclock = 10000000
+};
+
+union msg_to_can {
+    uint8_t in_bytes[20];  // Raw byte access (20 bytes)
+    uint32_t in_msg[5];    // Access as 32-bit words (5 * 4 = 20 bytes)
+
+    struct msg_wrap {  // Nested struct
+        uint8_t internal_msg[4];  // 4 bytes
+        can_frame can_msg;        // 16 bytes
+    } wrapped; // <-- Named instance inside the union
 };
 
 struct data_reads {

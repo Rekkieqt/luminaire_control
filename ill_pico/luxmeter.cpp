@@ -67,7 +67,7 @@ void luxmeter::calibrate() {
 
   unsigned long int curr_time = millis();
   while (millis() - curr_time < ONE_SEC_MS) {
-    analogWrite(LED_PIN,0);
+    analogWrite(LED_PIN,int(0.2*DAC_RANGE));
   }
   min_lux = get_lux();
   curr_time = millis();

@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "luxmeter.h"
 #include "pid.h"
 #include "ring_buffer.h"
@@ -20,8 +21,8 @@ static_lux_data lux_data; // constant parameters of the box, dist, max lux and G
 data_reads current_data, print_data; //data read inside the control sequence
 data_reads sim_data , print_sim; //out simulated based on ref
 luxmeter luxm(R0, Nfilter);
-pid wallee(1.0f/Fs, 2.5 , 0.02 , 0.00, 500, 0.1, 0); //h kp ki kd tt b c
-sim observer;
+pid wallee(1.0f/Fs, 1 , 0.12 , 0.00, 100, 0.1, 0); //h kp ki kd tt b c (1.0f/Fs, 2 , 0.08 , 0.00, 500, 0.1, 0) good values but u flicker!!!!
+sim observer;                                      //                   (1.0f/Fs, 1 , 0.12 , 0.00, 100, 0.1, 0) good values low flicker!!!!
 
 //can bus init 
 pico_unique_board_id_t pico_board_id; // Full ID
@@ -60,6 +61,7 @@ void read_interrupt(uint gpio, uint32_t events) {
 }
 
 // control sequence functions
+
 bool control_seq( struct repeating_timer *t ){  
   //control sequence
   current_data.time = time_us_64()/1000; // uint 32 bit
@@ -92,7 +94,7 @@ bool control_seq( struct repeating_timer *t ){
 void setup() {
   // control and serial setup
   Serial.begin();
-  analogReadResolution(DAC_RES);
+  analogReadResolution(DAC_RES); 
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   //luxm.tf_sweep();

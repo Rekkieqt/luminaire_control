@@ -31,7 +31,7 @@ float pid::feed_backward(float ref, float out, float G, float dist, user_set_fla
         //Serial.print("u[1] "); Serial.println(u[1],3);
         // Feed-forward 
         // Limit control with  feed-forward
-        u[3] = (u[1] + ref - dist)/G;  // ufb + uff - dist  
+        u[3] = (u[1] - dist)/G;  // ufb + uff - dist  
         wind_up(u[3],flag.anti_windup);// Handle windup //flag.anti_windup
     }
     else {

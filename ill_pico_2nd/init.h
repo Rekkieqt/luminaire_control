@@ -92,4 +92,9 @@ struct data_reads { // data written by the controller loop seq
     volatile float sim_out{0};
 };
 
+struct node_data {
+    int id;
+    float G;
+};
+
 #endif //init_H

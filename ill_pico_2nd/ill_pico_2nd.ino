@@ -30,6 +30,8 @@ unsigned long last_restart{0};
 bool print_y{false};
 bool print_u{false};
 bool print_buff{false};
+bool SERIAL_PRINTS_0{false};
+bool SERIAL_PRINTS_1{false};
 
 float v{0};
 float uk_1{0};
@@ -71,13 +73,14 @@ bool timer_seq( struct repeating_timer *t ){
 bool control_seq( struct repeating_timer *t ){  
   current_data.time = time_us_64()/1000; // uint 32 bit
   current_data.ref = PID.get_reference();
+  observer.param_est(PID.get_reference());
+  current_data.sim_out = observer.sys_sim();
   v = get_ldr_voltage(LDR_PIN);
   current_data.out = filter(luxmeter(v)); // READ AND FILTER
   current_data.u = PID.computePWM(current_data.out);
   PID.housekeep(current_data.out);
   analogWrite(LED_PIN,current_data.u*(DAC_RANGE-1));
-  observer.param_est(PID.get_reference());
-  current_data.sim_out = observer.sys_sim();
+  
   ctrler_flag = true;
   return true;
 }
@@ -145,8 +148,8 @@ void loop() {
       Serial.printf("0:%d ", 0);
       Serial.printf("Lt_s:%.4f\n",print_data.sim_out);
     }
-    if(print_u & !print_buff){Serial.printf("s u %d %f %lu\n", CIRC_NUM, print_data.u, print_data.time);}
-    if(print_y & !print_buff){Serial.printf("s y %d %f %lu\n", CIRC_NUM, print_data.out, print_data.time);}
+    if(print_u){Serial.printf("s u %d %f %lu\n", CIRC_NUM, print_data.u, print_data.time);}
+    if(print_y){Serial.printf("s y %d %f %lu\n", CIRC_NUM, print_data.out, print_data.time);}
 
     if(N > 0) {
       update_power_consumption(inst_power_consumption(uk_1)*(SAMPLE_TIME)*1e-3); // posso calcular o tempo exato de sample time, mas em ms deve ser sempre 10

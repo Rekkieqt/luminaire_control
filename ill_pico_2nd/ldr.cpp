@@ -36,6 +36,13 @@ float luxmeter(float v){
   return static_cast<float>(pow(R0/(Rl),static_cast<float>(1)/gamma_)); // Measured Iluminance (Lx)
 }
 
+float* get_ldr_params(){
+  float* params = new float(2);
+  params[0] = gamma_;
+  params[1]= R0;
+  return params;
+}
+
 void adjust_gain(void){
   // adjusts the background illuminance and gain of the environment
 

@@ -13,6 +13,7 @@ class sim
     float Vf;
     float ref[2];
     float gamma;
+    float R0_ldr;
     float h; 
     float log_R0; 
     float G; 
@@ -28,7 +29,7 @@ class sim
     //destructor
     ~sim();
 
-    void param_est(int _ref);
+    void param_est(float _ref);
     float sys_sim();
     void init_sim(float _h, float _G, float _dist);
     

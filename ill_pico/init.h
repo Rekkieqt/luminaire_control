@@ -4,7 +4,7 @@
 #include "can.h"
 
 enum static_parameters {
-    BUFFER = 1000, //edit to fit 1 min of data
+    BUFFER = 6000, //edit to fit 1 min of data
     R1 = 10000, // 10k ohm resistance of ldr circuit
     Rled = 47, // ohm the resistance of led circuit
     DAC_RES = 12, //12 bit dac resolution
@@ -41,11 +41,11 @@ enum canbus_parameters {
     rxf4 = 0,
     rxf5 = 0,
     // init used pins and spi clock def
-    SCKpin = 2,
-    TXpin = 3,
-    RXpin = 4,
-    CSpin = 5,
-    INTpin = 6,
+    SCKpin = 18,
+    TXpin = 19,
+    RXpin = 16,
+    CSpin = 17,
+    INTpin = 20,
     SPIclock = 10000000
 };
 

@@ -1,16 +1,24 @@
 #include <Arduino.h>
 #include "init.h"
+#include "ldr.h"
 #include "sim.h"
 
 sim::sim() 
  
 :  h{0}, G{0}, gamma{0.8}, 
   log_R0{0}, Vi{0}, Vf{0}, k{0}, ref{0,0}, compute{false},
-  tau_l{0}, tau_c{0}, lux_est{0}  { }
+  tau_l{0}, tau_c{0}, lux_est{0}, R0_ldr {275000} {
+
+    float* params = get_ldr_params();
+    gamma = params[0];
+    R0_ldr = params[1];
+
+    delete[] params;
+  }
 
 sim::~sim() {}
 
-void sim::param_est(int _ref) {
+void sim::param_est(float _ref) {
     ref[1] = _ref;
     if (ref[0] != _ref) { 
         Vi = DAC_RANGE*R1/(R1 + R0_ldr*pow(ref[0],-gamma));

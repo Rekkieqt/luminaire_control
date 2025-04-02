@@ -18,8 +18,8 @@
 
 #define CIRC_NUM 1
 
-#define SERIAL_PRINTS_0 0 
-#define SERIAL_PRINTS_1 0
+extern bool SERIAL_PRINTS_0;
+extern bool SERIAL_PRINTS_1;
 /*-----------------------------*/
 
 /*---------- state.h ----------*/
@@ -46,7 +46,6 @@ enum static_parameters {
     WRITE_FREQ = 60000, //pwm write frequency 
     LED_PIN = 15, // controlled led
     DAC_RANGE = 4096, // write and read val
-    R0_ldr = 275000, // ldr at 10 lux
     Fs = 100,     //samplimg frequency
     MSG_SIZE = 9,  // Serial bytes read on commands
     Nfilter = 11, //measuring vout
@@ -87,7 +86,7 @@ union msg_to_can { //internal frame between core comunications
 struct data_reads { // data written by the controller loop seq
     volatile uint32_t time{0};
     volatile float out{0};
-    volatile int ref{0}; 
+    volatile float ref{0}; 
     volatile float u{0};
     volatile float sim_out{0};
 };

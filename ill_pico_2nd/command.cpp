@@ -182,9 +182,8 @@ void get_command(float v, float L, float u, float ener, float flicker, float vis
       if(i < 0) {Serial.println("err"); break;}
       if(val != 0 && val != 1) {Serial.println("err"); break;}
       if(val == 0) {st = false; ref = PID.r_l;} else {st = true; ref = PID.r_h;}
-
-      if(i == CIRC_NUM) {occ_st = st; PID.set_reference(ref);}
-      Serial.println("ack");
+      
+      if(i == CIRC_NUM) {occ_st = st; PID.set_reference(ref); Serial.println("ack");}
       break;
     }
     case 's':{
@@ -199,6 +198,16 @@ void get_command(float v, float L, float u, float ener, float flicker, float vis
         if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
         if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
         print_u = true;
+      }
+      else if(token[0] == 'p'){ // start stream of control values
+        if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
+        if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
+        SERIAL_PRINTS_0 = true;
+      }
+      else if(token[0] == 'm'){ // start stream of control values
+        if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
+        if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
+        SERIAL_PRINTS_1 = true;
       }
       break;
     }
@@ -215,6 +224,18 @@ void get_command(float v, float L, float u, float ener, float flicker, float vis
         if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
         if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
         print_u = false;
+        Serial.println("ack");
+      }
+      else if(token[0] == 'p'){ // get LDR voltage
+        if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
+        if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
+        SERIAL_PRINTS_0 = false;
+        Serial.println("ack");
+      }
+      else if(token[0] == 'm'){ // get LDR voltage
+        if((token = strtok(NULL, " ")) == NULL) {Serial.println("err"); break;}
+        if((token) != NULL && atoi(token) != CIRC_NUM) {break;}
+        SERIAL_PRINTS_1 = false;
         Serial.println("ack");
       }
       break;

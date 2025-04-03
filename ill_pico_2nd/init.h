@@ -82,11 +82,11 @@ enum can_bus_frame_headers { // type of can message
 
 enum canbus_parameters {
     // init used pins and spi clock def
-    SCKpin = 2,
-    TXpin = 3,
-    RXpin = 4,
-    CSpin = 5,
-    INTpin = 6,
+    SCKpin = 18,
+    TXpin = 19,
+    RXpin = 16,
+    CSpin = 17,
+    INTpin = 20,
     SPIclock = 10000000
 };
 
@@ -119,6 +119,47 @@ struct id_data
     uint8_t sender;
     uint8_t header;
     uint8_t header_flag;
+};
+
+enum static_parameters {
+    // sets
+    set_ref = 0x01,
+    set_u = 0x02,
+    // gets
+    get_ref = 0x03,
+    get_u = 0x04,
+    get_y = 0x05,
+    get_volt = 0x06,
+    get_occ = 0x07,
+    get_aa = 0x08,
+    get_fb = 0x09,
+    get_dist = 0x0a,
+    get_pwr = 0x0b,
+    get_Rtime = 0x0c,
+    get_buff = 0x0d,
+    get_ref = 0x0e,
+    get_ref = 0x0f,
+    get_ref = 0x10,
+    get_ref = 0x11,
+    get_ref = 0x12,
+    get_ref = 0x13,
+    // perf
+    get_flicker = 0x14,
+    get_vis = 0x15,
+    get_enrgy = 0x16,
+    // streams
+    start_stream = 0x17,
+    stop_stream = 0x18,
+    // distr
+    get_lower_bound_occ = 0x19,
+    set_lower_bound_occ = 0x1a,
+    get_lower_bound_unocc = 0x1b, 
+    set_lower_bound_unocc = 0x1c,
+    get_curr_lum = 0x1e,
+    get_curr_cost = 0x1d,
+    set_curr_cost = 0x1f,
+    reset = 0xff
+      
 };
 
 #endif //init_H

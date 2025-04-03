@@ -5,7 +5,7 @@
 
 sim::sim() 
  
-:  h{0}, G{0}, gamma{0.8}, 
+:  h{0}, G{0}, gamma{0}, 
   log_R0{0}, Vi{0}, Vf{0}, k{0}, ref{0,0}, compute{false},
   tau_l{0}, tau_c{0}, lux_est{0}, R0_ldr {275000} {
 

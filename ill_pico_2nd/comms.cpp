@@ -136,10 +136,10 @@ void canbus_comm::process_msg_core0(msg_to_can* inner_frame) { //receive can thr
               // do something
         }
 }
-/*
 
+/*
 void assign_cross_gain_vector() {
-    float* cx_gains = new float[NUM_NODES];
+    float* cx_gains = new float[NUM_NODES-1];
 }
 
 void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame, void(*func)() ) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
@@ -164,12 +164,29 @@ void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame, void(*func)() ) { /
             while (can_id.header_flag != ACK || (micro_us_64/1000 - last_restart)< TEN_SEC) {
 
             //cross calibration mynode -> current node
+            cx_gains[n-1] = luxmeter(get_ldr_voltage(LDR_PIN));
 
             if(recv_msg(inner_frame)) {
                decodeCanID(inner_frame->msg_to_can.wrapped.can_msg.can_id,can_id->sender,can_id->sender,can_id->header,can_id->header_flag);        
+
                 }
             }
         }
     }
+}
+
+void canbus_comm::ser_req(uint8_t req_id, uint8_t req_cmd, msg_to_can* inner_frame) {
+    //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+    uint16_t can_id = encondeCanID(myID,req_id,SER,REQ);
+    //uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame
+    send_msg(can_id,req_cmd,inner_frame);
+}
+//decode outside, only go to ser recv 
+void canbus_comm::ser_recv(msg_to_can* inner_frame) {
+    decodeCanID(inner_frame->msg_to_can.wrapped.can_msg.can_id,can_id->sender,can_id->sender,can_id->header,can_id->header_flag);        
+    //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+    uint16_t can_id = encondeCanID(myID,req_id,SER,REQ);
+    //uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame
+    send_msg(can_id,req_cmd,inner_frame);
 }
 */

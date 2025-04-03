@@ -121,7 +121,7 @@ struct id_data
     uint8_t header_flag;
 };
 
-enum static_parameters {
+enum serial_canbus_requests {
     // sets
     set_ref = 0x01,
     set_u = 0x02,

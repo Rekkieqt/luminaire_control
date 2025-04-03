@@ -137,12 +137,6 @@ enum serial_canbus_requests {
     get_pwr = 0x0b,
     get_Rtime = 0x0c,
     get_buff = 0x0d,
-    get_ref = 0x0e,
-    get_ref = 0x0f,
-    get_ref = 0x10,
-    get_ref = 0x11,
-    get_ref = 0x12,
-    get_ref = 0x13,
     // perf
     get_flicker = 0x14,
     get_vis = 0x15,

@@ -37,14 +37,14 @@ bool canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
             can->clearRXnOVRFlags(); 
             can->clearInterrupts();
         }
-        inner_frm_to_fifo(inner_frame);
+        inner_frm_to_fifo(inner_frame);//não devia ser esta a madar o true? porque a fifo pode estar cheia 
         inner_frame->wrapped.internal_msg[0] = ACK;
         return true;
     }
     return false;
 }
 
-void canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
+bool canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
     inner_frame->wrapped.can_msg.can_id = id;
     inner_frame->wrapped.can_msg.can_dlc = sizeof(data);
     memcpy(inner_frame->wrapped.can_msg.data, &data, sizeof(data));
@@ -55,6 +55,7 @@ void canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can
     inner_frm_to_fifo(inner_frame);
     //Serial.println("Sent inner frame!");
     inner_frame->wrapped.internal_msg[0] = ACK; // 
+    return true;//aqui a mesma coisa
 }
 
 void canbus_comm::process_can_core1(msg_to_can* inner_frame, MCP2515* can, volatile bool& _got_irq) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary

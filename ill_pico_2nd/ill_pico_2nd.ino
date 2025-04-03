@@ -10,6 +10,7 @@
 #include "comms.h"
 #include "can.h"
 #include "init.h"
+#include "boot.h"
 
 
 /*---------- GLOBAL VARIABLES ----------*/
@@ -84,6 +85,10 @@ bool control_seq( struct repeating_timer *t ){
   ctrler_flag = true;
   return true;
 }
+/*-----------BOOT------------*/
+boot booty;
+
+
 /*-----------------------------*/
 
 /*---------- LOW-PASS FILTER ----------*/
@@ -105,6 +110,8 @@ void setup() {
   analogReadResolution(DAC_RES); 
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
+  delay(3000);
+  booty.NODE_BOOT(&hermes,inner_frm_core0);
 
   /*---------- SYS SIM ----------*/
   observer.init_sim(1.0f/Fs, G, d);

@@ -14,16 +14,17 @@ void canbus_comm::inner_frm_to_fifo(msg_to_can* inner_frame) {
     }
 }
 
-void canbus_comm::recv_msg(msg_to_can* inner_frame) {
+bool canbus_comm::recv_msg(msg_to_can* inner_frame) {
     if (rp2040.fifo.pop_nb(&inner_frame->in_msg[0])) {
         for (int i = 1; i < sizeof(inner_frame->in_msg) / sizeof(uint32_t); i++) {
         rp2040.fifo.pop_nb(&inner_frame->in_msg[i]);
         }   
         //Serial.println("Caught inner frame!"); 
     }
+    return true;
 }
 
-void canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
+bool canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
     if (inner_frame->wrapped.internal_msg[0] == REQUEST){
         can->sendMessage(&inner_frame->wrapped.can_msg);            
         inner_frame->wrapped.internal_msg[0] = ERR_REQ; //special flag for just error frm
@@ -37,6 +38,7 @@ void canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
         inner_frm_to_fifo(inner_frame);
         inner_frame->wrapped.internal_msg[0] = ACK;
     }
+    return true;
 }
 
 void canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
@@ -131,3 +133,26 @@ void canbus_comm::process_msg_core0(msg_to_can* inner_frame) { //receive can thr
               // do something
         }
 }
+/*
+void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
+    for (int n = 0 ; n < NUM_NODES ; n++) {
+        if (myNode == n) {
+            //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+            uint16_t can_id = encondeCanID(myNode,BDCAST,CALIBRATION,REQ);
+            //uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame
+            send_msg(can_id,REQUEST,0,inner_frame);
+            //call routine x
+            uint16_t can_id = encondeCanID(myNode,BDCAST,CALIBRATION,ACK);
+        }
+        else {
+            //uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &task, uint8_t &flags
+            while(1) {
+                if(recv_msg(inner_frame)) {
+                    
+                }
+                //cross calibration mynode -> current node
+            }
+        }
+    }
+}
+*/

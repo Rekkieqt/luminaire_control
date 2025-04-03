@@ -6,6 +6,7 @@ canbus_comm::canbus_comm() {
 }
 
 canbus_comm::~canbus_comm() {
+    //delete[] cxgains;
 }
 
 void canbus_comm::inner_frm_to_fifo(msg_to_can* inner_frame) {
@@ -20,8 +21,9 @@ bool canbus_comm::recv_msg(msg_to_can* inner_frame) {
         rp2040.fifo.pop_nb(&inner_frame->in_msg[i]);
         }   
         //Serial.println("Caught inner frame!"); 
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
@@ -37,8 +39,9 @@ bool canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
         }
         inner_frm_to_fifo(inner_frame);
         inner_frame->wrapped.internal_msg[0] = ACK;
+        return true;
     }
-    return true;
+    return false;
 }
 
 void canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
@@ -134,23 +137,37 @@ void canbus_comm::process_msg_core0(msg_to_can* inner_frame) { //receive can thr
         }
 }
 /*
-void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
+
+void assign_cross_gain_vector() {
+    float* cx_gains = new float[NUM_NODES];
+}
+
+void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame, void(*func)() ) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
     for (int n = 0 ; n < NUM_NODES ; n++) {
         if (myNode == n) {
             //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
-            uint16_t can_id = encondeCanID(myNode,BDCAST,CALIBRATION,REQ);
+            uint16_t can_id = encondeCanID(myNode,BROADCAST,CALIBRATION,REQ);
             //uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame
             send_msg(can_id,REQUEST,0,inner_frame);
-            //call routine x
-            uint16_t can_id = encondeCanID(myNode,BDCAST,CALIBRATION,ACK);
+
+            //calibration routine routine x
+            func();
+            //end of calibration routine  x
+            uint16_t can_id = encondeCanID(myNode,BROADCAST,CALIBRATION,ACK);
         }
         else {
-            //uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &task, uint8_t &flags
-            while(1) {
-                if(recv_msg(inner_frame)) {
-                    
+            uint16_t can_id;
+            while(!recv_msg(inner_frame) || (micro_us_64/1000 - last_restart)< TEN_SEC) { 
+                //active wait...
+            }
+            process_msg_core0(inner_frame);
+            while (can_id.header_flag != ACK || (micro_us_64/1000 - last_restart)< TEN_SEC) {
+
+            //cross calibration mynode -> current node
+
+            if(recv_msg(inner_frame)) {
+               decodeCanID(inner_frame->msg_to_can.wrapped.can_msg.can_id,can_id->sender,can_id->sender,can_id->header,can_id->header_flag);        
                 }
-                //cross calibration mynode -> current node
             }
         }
     }

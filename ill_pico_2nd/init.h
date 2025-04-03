@@ -49,18 +49,35 @@ enum static_parameters {
     Fs = 100,     //samplimg frequency
     MSG_SIZE = 9,  // Serial bytes read on commands
     Nfilter = 11, //measuring vout
-    ONE_SEC_MS = 1000 // one second wait in millis
+    ONE_SEC_MS = 1000, // one second wait in millis
+    TEN_SEC = 10000 // one second wait in millis
 };
 
 enum inr_frm_header_types { // type of messages between cores through internal fifo
     //core0 to core1
     REQUEST = 0xff,
     ERR_REQ = 0x0f,
-    ACK = 0x00,
     HEAD_FLAG = 0x13,
     CRITICAL_ERRORS = 0xaa,
     ERRORS = 0xbb
     //global headers
+    BROADCAST = 0x00;
+};
+enum can_bus_frame_headers { // type of can message
+/*---------- HEADERS ----------*/
+    BOOT = 0x00, //generic
+    CALIBRATION = 0x01, //for calibration
+    SER = 0x02, //for serial
+    REF = 0x03, //for consensus control
+    // 4 remaining types 
+/*-----------------------------*/
+
+/*---------- HEADER FLAGS ----------*/
+    ACK = 0x00, //msg for acceptance
+    REQ = 0x01, //msg for request
+    ERR = 0x02, //msg for error
+    UNDEFINED = 0x03 // for an additional message
+/*-----------------------------*/
 };
 
 enum canbus_parameters {
@@ -94,6 +111,14 @@ struct data_reads { // data written by the controller loop seq
 struct node_data {
     int id;
     float G;
+};
+
+struct id_data
+{
+    uint8_t receiver;
+    uint8_t sender;
+    uint8_t header;
+    uint8_t header_flag;
 };
 
 #endif //init_H

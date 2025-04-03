@@ -59,9 +59,9 @@ enum inr_frm_header_types { // type of messages between cores through internal f
     ERR_REQ = 0x0f,
     HEAD_FLAG = 0x13,
     CRITICAL_ERRORS = 0xaa,
-    ERRORS = 0xbb
+    ERRORS = 0xbb,
     //global headers
-    BROADCAST = 0x00;
+    BROADCAST = 0x00
 };
 enum can_bus_frame_headers { // type of can message
 /*---------- HEADERS ----------*/

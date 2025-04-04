@@ -55,7 +55,7 @@ void sim::init_sim(float _h,float _G, float _dist) {
     ref[0] = _dist;
     log_R0 = log10(params[1]);
     lux_est = _dist;
-    Serial.print("gamma "); Serial.println(params[0]); 
-    Serial.print("log_R0 "); Serial.println(log_R0); 
-    Serial.print("R0 "); Serial.println(params[1]); 
+    //Serial.print("gamma "); Serial.println(params[0]); 
+    //Serial.print("log_R0 "); Serial.println(log_R0); 
+    //Serial.print("R0 "); Serial.println(params[1]); 
 }

@@ -20,7 +20,7 @@ bool canbus_comm::recv_msg(msg_to_can* inner_frame) {
         for (int i = 1; i < sizeof(inner_frame->in_msg) / sizeof(uint32_t); i++) {
         rp2040.fifo.pop_nb(&inner_frame->in_msg[i]);
         }   
-        //Serial.println("Caught inner frame!"); 
+        Serial.println("Caught inner frame!"); 
         return true;
     }
     return false;
@@ -44,7 +44,7 @@ bool canbus_comm::send_can(msg_to_can* inner_frame, MCP2515* can) {
     return false;
 }
 
-bool canbus_comm::send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
+bool canbus_comm::send_msg(uint16_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame) {
     inner_frame->wrapped.can_msg.can_id = id;
     inner_frame->wrapped.can_msg.can_dlc = sizeof(data);
     memcpy(inner_frame->wrapped.can_msg.data, &data, sizeof(data));
@@ -89,12 +89,13 @@ void canbus_comm::process_can_core1(msg_to_can* inner_frame, MCP2515* can, volat
 void canbus_comm::process_msg_core0(msg_to_can* inner_frame) { //receive can thru fifo, process data, do something on necessity
         switch (inner_frame->wrapped.internal_msg[0]) {
           case REQUEST: 
-            can_data_ptr = (uint64_t*)inner_frame->wrapped.can_msg.data;
+            //dest, source, size
+            memcpy(&can_data,inner_frame->wrapped.can_msg.data,sizeof(can_data));
             // print
             Serial.println("Msg Broadcast!");
             Serial.print("msg id ");Serial.println(inner_frame->wrapped.can_msg.can_id);
             Serial.print("msg dlc ");Serial.println(inner_frame->wrapped.can_msg.can_dlc);
-            Serial.print("data ");Serial.println(*can_data_ptr);
+            Serial.print("data ");Serial.println(can_data);
             inner_frame->wrapped.internal_msg[0] = ACK; // read flag
             break;
           case ACK:

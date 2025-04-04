@@ -24,10 +24,10 @@ void decodeCanId(uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &ta
     sender = canId & 0x07;
 }
 
-void boot::NODE_BOOT(canbus_comm* hermes,msg_to_can inner_frm_core0) {
+void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     unsigned long startTime;
     srand(micros()); // Seed random generator
-    uint32_t randomValue;
+    uint64_t randomValue;
     bool idConflict;
     int conflits = 0;
 
@@ -35,11 +35,11 @@ void boot::NODE_BOOT(canbus_comm* hermes,msg_to_can inner_frm_core0) {
     int bufferSize = 0;               // Number of stored elements
 
     randomValue = rand() % 256;
+    Serial.print("msg_data: ");
+    Serial.println(randomValue);
     uint16_t can_id = encodeCanId(0,0,0,0);
     idConflict = false;
     int nodeId = randomValue;
-
-    msg_to_can received_msg;
 
     // Store my own nodeId in the buffer
     nodeBuffer = new node_data[1];  
@@ -48,7 +48,7 @@ void boot::NODE_BOOT(canbus_comm* hermes,msg_to_can inner_frm_core0) {
 
 
     // Send ID request to see if it's taken
-    while (!hermes->send_msg(can_id, HEAD_FLAG, randomValue, &inner_frm_core0))
+    while (!hermes->send_msg(can_id, HEAD_FLAG, randomValue, inner_frame))
     {
         continue;
     }
@@ -61,9 +61,11 @@ void boot::NODE_BOOT(canbus_comm* hermes,msg_to_can inner_frm_core0) {
     // Listen for responses for 2 seconds
     startTime = millis();
     while (millis() - startTime < 5000) {
-        if (hermes->recv_msg(&received_msg)) {
-            hermes->process_msg_core0(&received_msg);
-            uint32_t receivedId = received_msg.wrapped.can_msg.can_id;
+        if (hermes->recv_msg(inner_frame)) {
+            hermes->process_msg_core0(inner_frame);
+            //memcpy is sugested... maybe change the process_msg function a bit ...
+            uint64_t receivedId{0};
+            memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
             Serial.println("MESSAGE RCV:");
             Serial.println(receivedId);
 
@@ -125,9 +127,9 @@ void boot::NODE_BOOT(canbus_comm* hermes,msg_to_can inner_frm_core0) {
     } while (idConflict);  // Keep retrying until a unique ID is assigned
     while (conflits>0)
     {
-        if (hermes->recv_msg(&received_msg)) {
-            hermes->process_msg_core0(&received_msg);
-            uint16_t receivedId = received_msg.wrapped.can_msg.can_id;
+        if (hermes->recv_msg(inner_frame)) {
+            hermes->process_msg_core0(inner_frame);
+            uint16_t receivedId = inner_frame->wrapped.can_msg.can_id;
         }
     }
     Serial.print("Node initialized successfully with ID: ");

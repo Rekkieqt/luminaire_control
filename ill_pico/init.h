@@ -41,11 +41,11 @@ enum canbus_parameters {
     rxf4 = 0,
     rxf5 = 0,
     // init used pins and spi clock def
-    SCKpin = 18,
-    TXpin = 19,
-    RXpin = 16,
-    CSpin = 17,
-    INTpin = 20,
+    SCKpin = 2,
+    TXpin = 3,
+    RXpin = 4,
+    CSpin = 5,
+    INTpin = 6,
     SPIclock = 10000000
 };
 

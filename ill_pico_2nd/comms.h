@@ -14,7 +14,7 @@ class canbus_comm
     String eflg_str = "| RX1OV | RX0OV | TXBO | TXEP | RXEP | TXWAR | RXWAR | EWARN | ";
     id_data can_id;
     uint16_t NUM_NODES;
-    uint64_t* can_data_ptr = nullptr;
+    uint64_t can_data;
   public:
     //constructor
     canbus_comm();
@@ -26,7 +26,7 @@ class canbus_comm
     void assign_cross_gain_vector();
     bool send_can(msg_to_can* inner_frame, MCP2515* can);
     bool recv_msg(msg_to_can* inner_frame);
-    bool send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame);
+    bool send_msg(uint16_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame);
     void process_can_core1(msg_to_can* inner_frame, MCP2515* can, volatile bool& _got_irq);
     void process_msg_core0(msg_to_can* inner_frame);  
 };

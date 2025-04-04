@@ -16,7 +16,7 @@ public:
     ~boot();  // Destructor
 
     //void boot_init();  // Initialize buffer
-    void NODE_BOOT(canbus_comm* herms, msg_to_can inner_frm_core0);  // Process CAN messages
+    void NODE_BOOT(canbus_comm* herms, msg_to_can* inner_frame);  // Process CAN messages
 };
 
 #endif // BOOT_H

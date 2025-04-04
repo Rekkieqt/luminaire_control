@@ -112,7 +112,7 @@ void setup() {
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   delay(3000);
-  booty.NODE_BOOT(&hermes,inner_frm_core0);
+  booty.NODE_BOOT(&hermes,&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
@@ -195,8 +195,8 @@ void setup1() {
   Serial.begin();
   canbuz.reset();
   canbuz.setBitrate(CAN_1000KBPS);
-  canbuz.setNormalMode();
-  //canbuz.setLoopbackMode();
+  //canbuz.setNormalMode();
+  canbuz.setLoopbackMode();
 
   /*---------- CONTROL INT SETUP ----------*/
   gpio_set_irq_enabled_with_callback( INTpin, GPIO_IRQ_EDGE_FALL, true, &read_interrupt );

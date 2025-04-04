@@ -33,6 +33,7 @@ bool print_u{false};
 bool print_buff{false};
 bool SERIAL_PRINTS_0{false};
 bool SERIAL_PRINTS_1{false};
+bool dn_special_print{false};
 
 float v{0};
 float uk_1{0};
@@ -113,14 +114,14 @@ void setup() {
   delay(3000);
   booty.NODE_BOOT(&hermes,inner_frm_core0);
 
-  /*---------- SYS SIM ----------*/
-  observer.init_sim(1.0f/Fs, G, d);
-
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
   PID.set_system_gain(G);
 
+  /*---------- SYS SIM ----------*/
+  observer.init_sim(1.0f/Fs, G, d);
+  
   /*---------- CONTROL INT SETUP ----------*/
   add_repeating_timer_ms( -SAMPLE_TIME, control_seq, NULL, &pid_timer); //100 Hz
 
@@ -146,7 +147,13 @@ void loop() {
       data_log.print_buff(x,CIRC_NUM); // 1 MIN BUFFER PRINTING
       print_buff = false;  // only once per every serial call
     } 
-
+    if(dn_special_print) {
+      Serial.print(" "); Serial.print(print_data.time);
+      Serial.print(" "); Serial.print(print_data.ref);
+      Serial.print(" "); Serial.print(print_data.u);
+      Serial.print(" "); Serial.print(print_data.out);
+      Serial.print(" "); Serial.println(print_data.sim_out); 
+      }
     if(SERIAL_PRINTS_0){
       Serial.printf("t:%lu ",print_data.time);
       Serial.printf("r:%.2f ",print_data.ref);

@@ -33,6 +33,7 @@ extern unsigned long last_restart;
 extern bool print_y;
 extern bool print_u;
 extern bool print_buff;
+extern bool dn_special_print;
 
 extern char x; // character representing variable to print form buffer
 /*-----------------------------*/

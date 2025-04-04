@@ -280,6 +280,16 @@ void get_command(float v, float L, float u, float ener, float flicker, float vis
       Serial.println("ack");
       break;
     }
+    case 'z':{ // extra print
+      int i;
+      bool val;
+      if(sscanf(buff + 2 , "%d %d", &i, &val)!=2){Serial.println("err"); break;};
+      // argument validation
+      if(i < 0) {Serial.println("err"); break;}
+      dn_special_print = dn_special_print ^ true;
+      Serial.println("special ack");
+      break;
+    }
     default:
       Serial.println("err");
       break;

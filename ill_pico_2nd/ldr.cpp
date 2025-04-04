@@ -36,11 +36,11 @@ float luxmeter(float v){
   return static_cast<float>(pow(R0/(Rl),static_cast<float>(1)/gamma_)); // Measured Iluminance (Lx)
 }
 
-float* get_ldr_params(){
-  float* params = new float[2];
-  params[0] = gamma_;
-  params[1] = R0;
-  return params;
+void get_ldr_params(float cal_params[2]){
+  cal_params[0] = gamma_;
+  cal_params[1] = (CIRC_NUM == 1) ? (300000) :
+                  (CIRC_NUM == 2) ? (200000) : 
+                  0.0;; 
 }
 
 void adjust_gain(void){
@@ -62,7 +62,7 @@ void adjust_gain(void){
   analogWrite(LED_PIN, static_cast<int>(u2*(DAC_RANGE-1)));
   delay(7000);
   while(l2 <= 0){l2 = luxmeter(get_ldr_voltage(LDR_PIN));}
-
+  
   G = (l2-l1)/(u2-u1);
 
   // Serial.print("G: "); Serial.println(G);

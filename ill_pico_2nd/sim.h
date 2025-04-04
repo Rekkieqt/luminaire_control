@@ -12,14 +12,14 @@ class sim
     float Vi;
     float Vf;
     float ref[2];
-    float gamma;
-    float R0_ldr;
+    //float gamma;
     float h; 
     float log_R0; 
     float G; 
     float tau_c;
     float tau_l;
     float lux_est;
+    float params[2]; //params[0] =gamma , params [1] =R0
     bool compute;
   public:
 

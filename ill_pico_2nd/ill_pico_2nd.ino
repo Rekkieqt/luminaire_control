@@ -185,7 +185,8 @@ void loop() {
   if(time_to_write) {
     time_to_write = false;
     //comment for no sending 
-    //hermes.send_msg(node_id,HEAD_FLAG,counter++,&inner_frm_core0);
+    //msg_to_can* inner_frame, uint16_t canm_id, void* data = nullptr ,size_t size_data = 0
+    //hermes.send_msg(&inner_frm_core0, node_id, &(counter++), sizeof(counter));
   }
   hermes.recv_msg(&inner_frm_core0);
   hermes.process_msg_core0(&inner_frm_core0);

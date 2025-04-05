@@ -40,7 +40,7 @@ void get_ldr_params(float cal_params[2]){
   cal_params[0] = gamma_;
   cal_params[1] = (CIRC_NUM == 1) ? (300000) :
                   (CIRC_NUM == 2) ? (200000) : 
-                  0.0;; 
+                  0.0; 
 }
 
 void adjust_gain(void){

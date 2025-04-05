@@ -4,6 +4,9 @@
 #include "init.h"
 #include "comms.h"
 
+uint16_t encodeCanId(uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag);
+void decodeCanId(uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &header, uint8_t &header_flag);
+
 class boot {
 private:
     // struct node_data* buffer;  // Pointer to message buffer

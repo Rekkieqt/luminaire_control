@@ -140,7 +140,7 @@ void performance::get_pmax() {
   }
   Pmax = pow(((DAC_RANGE - vled)*conversor),2)/Rled;
   curr_time = millis();
-    while (millis() - curr_time < ONE_SEC_MS) { 
+  while (millis() - curr_time < ONE_SEC_MS) { 
     analogWrite(LED_PIN,0);
   }
 }

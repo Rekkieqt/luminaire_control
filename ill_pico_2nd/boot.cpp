@@ -296,6 +296,18 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                 }
             
             }
+
+            //verificar se esta no nodeBuffercom for e por idConflit=false;
+
+                    for (int i_ = 0; i_ < bufferSize; i_++)
+                        {
+                            if (nodeBuffer[i_].id==nodeId)
+                            {
+                                idConflict=false;
+
+                            }
+                            
+                        }
     
         } while (idConflict);  // Keep retrying until a unique ID is assigned
 

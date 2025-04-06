@@ -196,8 +196,8 @@ void setup1() {
   Serial.begin();
   canbuz.reset();
   canbuz.setBitrate(CAN_1000KBPS);
-  //canbuz.setNormalMode();
-  canbuz.setLoopbackMode();
+  canbuz.setNormalMode();
+  //canbuz.setLoopbackMode();
 
   /*---------- CONTROL INT SETUP ----------*/
   gpio_set_irq_enabled_with_callback( INTpin, GPIO_IRQ_EDGE_FALL, true, &read_interrupt );

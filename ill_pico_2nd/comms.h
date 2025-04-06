@@ -6,6 +6,7 @@
 #include "ring_buffer.h"
 #include "mcp2515.h"
 #include "init.h"
+#include "performance.h"
 
 class canbus_comm
 {
@@ -16,6 +17,10 @@ class canbus_comm
     can_data_decoder can_gut; // for msg send and recv modifications
     uint16_t NUM_NODES;
     uint64_t can_data;
+    //stream vars
+    bool stream_check_u{false};
+    bool stream_check_y{false};
+    uint8_t stream_id;
   public:
     //constructor
     canbus_comm();
@@ -31,6 +36,10 @@ class canbus_comm
     void process_can_core1(msg_to_can* inner_frame, MCP2515* can, volatile bool& _got_irq);
     void process_msg_core0(msg_to_can* inner_frame);  
     void error_process(msg_to_can* inner_frame, MCP2515* can);
+    void ser_req(msg_to_can* inner_frame, uint8_t req_id, uint8_t req_cmd);
+    void ser_send(msg_to_can* inner_frame);
+    void ser_receive(msg_to_can* inner_frame);
+    void ntwrk_calibration(msg_to_can* inner_frame);
 };
 
 

@@ -40,7 +40,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     randomValue = rand() % 256;
     Serial.print("msg_data: ");
     Serial.println(randomValue);
-    uint16_t can_id = encodeCanId(0,0,0,0);
+    uint16_t can_id = encodeCanId(1,1,1,1);
     idConflict = false;
     int nodeId = randomValue;
 

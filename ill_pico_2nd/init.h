@@ -77,7 +77,10 @@ enum can_bus_headers { // type of can message
     ACK = 0x00, //msg for acceptance
     REQ = 0x01, //msg for request
     ERR = 0x02, //msg for error
-    UNDEFINED = 0x03 // for an additional message
+    UNDEFINED = 0x03, // for an additional message
+/*-----------------------------*/
+/*---------- SPECIAL ADRESSES ----------*/
+    BROADCAST = 0x00 
 /*-----------------------------*/
 };
 
@@ -123,9 +126,10 @@ struct id_data
 };
 
 union can_data_decoder {   //can data decoding
-    uint8_t bytes[8];  
-    uint32_t two_bytes[2];   
-    uint64_t four_bytes;   
+    uint8_t bytes[8];
+    bool bools[8];  
+    uint32_t four_bytes[2];   
+    uint64_t eight_bytes;   
     float floats[2];   
     int ints[2];   
 };
@@ -135,6 +139,8 @@ enum serial_canbus_requests {
     set_ref = 0x01,
     set_u = 0x02,
     set_occ = 0x03,
+    set_aa = 0x22,
+    set_fb = 0x23,
 
     // Gets (0x04 - 0x13)
     get_ref = 0x04,

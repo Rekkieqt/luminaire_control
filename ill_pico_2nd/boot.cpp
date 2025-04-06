@@ -33,6 +33,9 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
 
     node_data* nodeBuffer = nullptr;  // Dynamic array for storing node messages
     int bufferSize = 0;               // Number of stored elements
+    // node_data* duplicatesBuffer = nullptr;
+    // int duplicatesCount = 0;^
+    //int num_of_msg=1;
 
     randomValue = rand() % 256;
     Serial.print("msg_data: ");
@@ -64,6 +67,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     while (millis() - startTime < 5000) {
         if (hermes->recv_msg(inner_frame)) {
             hermes->process_msg_core0(inner_frame);
+            //num_of_msg++;
             //memcpy is sugested... maybe change the process_msg function a bit ...
             uint64_t receivedId{0};
             memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
@@ -97,9 +101,37 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                     bufferSize--; // Reduce size
                     Serial.print("Removed duplicate message from node ID: ");
                     Serial.println(receivedId);
+
+
+                    // // Store duplicate ID in duplicatesBuffer
+                    // node_data* tempDup = new node_data[duplicatesCount + 1];
+
+                    // for (int k = 0; k < duplicatesCount; k++) {
+                    //     tempDup[k] = duplicatesBuffer[k];
+                    // }
+
+                    // tempDup[duplicatesCount].id = receivedId;
+
+                    // duplicatesCount++;
+
+                    // delete[] duplicatesBuffer;
+                    // duplicatesBuffer = tempDup;
+
                     break;
                 }
             }
+
+            // bool duplicate=false;
+            // for (int i_ = 0; i_ < duplicatesCount; i_++)
+            // {
+            //     if (duplicatesBuffer[i].id==receivedId)
+            //     {
+            //         duplicate=true
+            //     }
+                
+            // }
+
+            //substituir no if por !duplicate
 
             if (!found && receivedId != nodeId) {
                 // Allocate memory for a new node
@@ -116,10 +148,24 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                 Serial.print("Stored CAN Message from node ID: ");
                 Serial.println(receivedId);
             }
+            
         }
     }
     do {
+
+
       /*
+        int a=0;
+        while(a<num_of_msg){
+            if (hermes->recv_msg(inner_frame)) {
+                hermes->process_msg_core0(inner_frame);
+                
+            }
+        
+        }
+        randomValue = rand() % 256;
+
+
       
       
       

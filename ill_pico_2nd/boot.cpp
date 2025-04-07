@@ -198,6 +198,17 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             {
                 continue;
             }
+
+            // Allocate memory for a new node
+            node_data* temp = new node_data[bufferSize + 1];
+            for (int i = 0; i < bufferSize; i++) {
+                temp[i] = nodeBuffer[i];
+            }
+            temp[bufferSize].id = randomValue;
+            bufferSize++;
+
+            delete[] nodeBuffer; // Free old memory
+            nodeBuffer = temp;
     
             //rcv and read the number of times of the conflits
             int a=1;

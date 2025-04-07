@@ -80,7 +80,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             if (receivedId == nodeId) {
                 idConflict = true;
                 Serial.println("ID Conflict Detected! Retrying...");
-                break;  // Exit early to regenerate ID
+                //break;  // Exit early to regenerate ID
             }
             
 
@@ -96,6 +96,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             bool found = false;
             for (int i = 0; i < bufferSize; i++) {
                 if (nodeBuffer[i].id == receivedId) {
+                    Serial.println("Entreiiiii");
                     found = true;
                     // Remove the duplicate by shifting elements
                     for (int j = i; j < bufferSize - 1; j++) {
@@ -189,6 +190,8 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                 
             } while (true);
             nodeId= randomValue;
+            Serial.println("ESTE VAI OUTRA VEZ");
+            Serial.println(randomValue);
     
     
             while (!hermes->send_msg(inner_frame, can_id, &randomValue, sizeof(randomValue)))
@@ -197,11 +200,12 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             }
     
             //rcv and read the number of times of the conflits
-            int a=0;
+            int a=1;
             while(a<conflits){
     
                 if (hermes->recv_msg(inner_frame)) {
                     hermes->process_msg_core0(inner_frame);
+                    a++;
                     conflits=0;
                     num_of_msg++;//talvez não seja necessário
                     //memcpy is sugested... maybe change the process_msg function a bit ...
@@ -214,7 +218,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                     if (receivedId == nodeId) {
                         idConflict = true;
                         Serial.println("ID Conflict Detected! Retrying...");
-                        break;  // Exit early to regenerate ID
+                        //break;  // Exit early to regenerate ID
                     }
                     
         
@@ -314,7 +318,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
 
 
     }
-    
+    //UPDATE nodeBuffer when my id is already correct
     while (conflits>0)
     {
         delete[] duplicatesBuffer;
@@ -328,6 +332,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
 
             if (hermes->recv_msg(inner_frame)) {
                 hermes->process_msg_core0(inner_frame);
+                a++;
                 conflits=0;
                 num_of_msg++;//talvez não seja necessário
                 //memcpy is sugested... maybe change the process_msg function a bit ...
@@ -340,7 +345,7 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                 if (receivedId == nodeId) {
                     idConflict = true;
                     Serial.println("ID Conflict Detected! Retrying...");
-                    break;  // Exit early to regenerate ID
+                    //break;  // Exit early to regenerate ID
                 }
                 
     

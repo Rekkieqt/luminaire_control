@@ -10,6 +10,7 @@
 #include "comms.h"
 #include "can.h"
 #include "init.h"
+#include "boot.h"
 
 
 /*---------- GLOBAL VARIABLES ----------*/
@@ -32,6 +33,7 @@ bool print_u{false};
 bool print_buff{false};
 bool SERIAL_PRINTS_0{false};
 bool SERIAL_PRINTS_1{false};
+bool dn_special_print{false};
 
 float v{0};
 float uk_1{0};
@@ -84,6 +86,10 @@ bool control_seq( struct repeating_timer *t ){
   ctrler_flag = true;
   return true;
 }
+/*-----------BOOT------------*/
+boot booty;
+
+
 /*-----------------------------*/
 
 /*---------- LOW-PASS FILTER ----------*/
@@ -105,15 +111,17 @@ void setup() {
   analogReadResolution(DAC_RES); 
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
-
-  /*---------- SYS SIM ----------*/
-  observer.init_sim(1.0f/Fs, G, d);
+  delay(3000);
+  booty.NODE_BOOT(&hermes,&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
   PID.set_system_gain_n_dist(G, d);
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
 
+  /*---------- SYS SIM ----------*/
+  observer.init_sim(1.0f/Fs, G, d);
+  
   /*---------- CONTROL INT SETUP ----------*/
   add_repeating_timer_ms( -SAMPLE_TIME, control_seq, NULL, &pid_timer); //100 Hz
 
@@ -139,7 +147,13 @@ void loop() {
       data_log.print_buff(x,CIRC_NUM); // 1 MIN BUFFER PRINTING
       print_buff = false;  // only once per every serial call
     } 
-
+    if(dn_special_print) {
+      Serial.print(" "); Serial.print(print_data.time);
+      Serial.print(" "); Serial.print(print_data.ref);
+      Serial.print(" "); Serial.print(print_data.u);
+      Serial.print(" "); Serial.print(print_data.out);
+      Serial.print(" "); Serial.println(print_data.sim_out); 
+      }
     if(SERIAL_PRINTS_0){
       Serial.printf("t:%lu ",print_data.time);
       Serial.printf("r:%.2f ",print_data.ref);
@@ -171,7 +185,8 @@ void loop() {
   if(time_to_write) {
     time_to_write = false;
     //comment for no sending 
-    //hermes.send_msg(node_id,HEAD_FLAG,counter++,&inner_frm_core0);
+    //msg_to_can* inner_frame, uint16_t canm_id, void* data = nullptr ,size_t size_data = 0
+    //hermes.send_msg(&inner_frm_core0, node_id, &(counter++), sizeof(counter));
   }
   hermes.recv_msg(&inner_frm_core0);
   hermes.process_msg_core0(&inner_frm_core0);

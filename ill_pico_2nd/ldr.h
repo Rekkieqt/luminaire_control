@@ -6,7 +6,7 @@ extern float d;
 
 float get_ldr_voltage(int pinNumber);
 float luxmeter(float v);
-float* get_ldr_params();
+void get_ldr_params(float cal_params[2]);
 void adjust_gain(void);
 
 #endif

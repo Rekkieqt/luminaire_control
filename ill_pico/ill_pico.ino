@@ -128,13 +128,12 @@ void loop() {
       Serial.print(" Duty cycle on pwm "); Serial.println(print_data.u*100/DAC_RANGE);  
     }
     //TESTING LOGGING
-    
+    /*
     Serial.print(" "); Serial.print(print_data.time);
     Serial.print(" "); Serial.print(print_data.ref);
     Serial.print(" "); Serial.print(print_data.u*100/DAC_RANGE);
     Serial.print(" "); Serial.print(print_data.out);
     Serial.print(" "); Serial.println(print_data.sim_out); 
-    /*
     */
   }
   if (usr_update) {
@@ -151,7 +150,7 @@ void loop() {
   if(time_to_write) {
     time_to_write = false;
     //comment for no sending 
-    //hermes.send_msg(node_id,HEAD_FLAG,counter++,&inner_frm_core0);
+    hermes.send_msg(node_id,HEAD_FLAG,counter++,&inner_frm_core0);
   }
   hermes.recv_msg(&inner_frm_core0);
   hermes.process_msg_core0(&inner_frm_core0);
@@ -161,8 +160,8 @@ void setup1() {
   Serial.begin();
   canbuz.reset();
   canbuz.setBitrate(CAN_1000KBPS);
-  canbuz.setNormalMode();
-  //canbuz.setLoopbackMode();
+  //canbuz.setNormalMode();
+  canbuz.setLoopbackMode();
   gpio_set_irq_enabled_with_callback( INTpin, GPIO_IRQ_EDGE_FALL, true, &read_interrupt );
 }
 

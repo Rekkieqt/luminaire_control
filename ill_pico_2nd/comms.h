@@ -6,13 +6,21 @@
 #include "ring_buffer.h"
 #include "mcp2515.h"
 #include "init.h"
+#include "performance.h"
 
 class canbus_comm
 {
   private:
     String canintf_str = "| MERRF | WAKIF | ERRIF | TX2IF | TX0IF | TX1IF | RX1IF | RX0IF | ";
     String eflg_str = "| RX1OV | RX0OV | TXBO | TXEP | RXEP | TXWAR | RXWAR | EWARN | ";
-    uint64_t* can_data_ptr = nullptr;
+    id_data id;
+    can_data_decoder can_gut; // for msg send and recv modifications
+    uint16_t NUM_NODES;
+    uint64_t can_data;
+    //stream vars
+    bool stream_check_u{false};
+    bool stream_check_y{false};
+    uint8_t stream_id;
   public:
     //constructor
     canbus_comm();
@@ -21,11 +29,17 @@ class canbus_comm
 
     //functions
     void inner_frm_to_fifo(msg_to_can* inner_frame);
-    void send_can(msg_to_can* inner_frame, MCP2515* can);
-    void recv_msg(msg_to_can* inner_frame);
-    void send_msg(uint8_t id, uint8_t header, uint64_t data, msg_to_can* inner_frame);
+    void assign_cross_gain_vector();
+    bool send_can(msg_to_can* inner_frame, MCP2515* can);
+    bool recv_msg(msg_to_can* inner_frame);
+    bool send_msg(msg_to_can* inner_frame, uint16_t canm_id, void* data = nullptr ,size_t size_data = 0); // (uint16_t id, uint64_t data, msg_to_can* inner_frame)
     void process_can_core1(msg_to_can* inner_frame, MCP2515* can, volatile bool& _got_irq);
     void process_msg_core0(msg_to_can* inner_frame);  
+    void error_process(msg_to_can* inner_frame, MCP2515* can);
+    void ser_req(msg_to_can* inner_frame, uint8_t req_id, uint8_t req_cmd);
+    void ser_send(msg_to_can* inner_frame);
+    void ser_receive(msg_to_can* inner_frame);
+    void ntwrk_calibration(msg_to_can* inner_frame);
 };
 
 

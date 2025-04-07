@@ -276,7 +276,7 @@ void get_command(float v, float L, float u, float ener, float flicker, float vis
       last_restart = time_us_64()/1000;
       adjust_gain();
       PID.set_reference(occ_st ? PID.r_h : PID.r_l);
-      PID.set_system_gain(G);
+      PID.set_system_gain_n_dist(G, d);
       Serial.println("ack");
       break;
     }

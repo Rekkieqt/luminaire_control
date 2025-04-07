@@ -13,8 +13,8 @@
 
 
 /*---------- GLOBAL VARIABLES ----------*/
-pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 1.5, 6, 0, 0.07, 0.05, 0.025, 0.003}; // PID controller initialization
-// pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 15e8, 15e8, 0, 7e-10, 5e-10, 0.05e-8, 0.003}; // PID controller initialization
+// pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 1.5, 6, 0, 0.07, 0.05, 0.025, 0.003}; // PID controller initialization
+pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 15e8, 6e8, 0,8e-10, 7e-10, 4e-10, 0.003}; // PID controller initialization
 ring_buffer data_log; //last minute buffer of events
 data_reads current_data, print_data; //data read inside the control sequence
 sim observer;
@@ -111,8 +111,8 @@ void setup() {
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
+  PID.set_system_gain_n_dist(G, d);
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
-  PID.set_system_gain(G);
 
   /*---------- CONTROL INT SETUP ----------*/
   add_repeating_timer_ms( -SAMPLE_TIME, control_seq, NULL, &pid_timer); //100 Hz

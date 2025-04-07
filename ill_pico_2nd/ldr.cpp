@@ -37,7 +37,7 @@ float luxmeter(float v){
 }
 
 float* get_ldr_params(){
-  float* params = new float(2);
+  float* params = new float[2];
   params[0] = gamma_;
   params[1]= R0;
   return params;

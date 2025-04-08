@@ -262,11 +262,11 @@ void canbus_comm::ser_send(msg_to_can* inner_frame) {
             PID.set_reference(0.0f); //ref);
             break;
         case set_aa:
-            // handle set_occ
+            // handle set_aa
             PID.set_anti_wu_status(can_gut.bytes[1]);
             break;            
         case set_fb:
-            // handle set_occ
+            // handle set_fb
             PID.set_fb_status(can_gut.bytes[1]);
             break;            
         // Gets
@@ -434,7 +434,7 @@ void canbus_comm::ser_send(msg_to_can* inner_frame) {
             last_restart = time_us_64()/1000;
             adjust_gain();
             PID.set_reference(occ_st ? PID.r_h : PID.r_l);
-            PID.set_system_gain(G);
+            PID.set_system_gain_n_dist(G,d);
             //init boot
             //init network
             break;

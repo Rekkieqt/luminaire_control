@@ -8,7 +8,7 @@ uint16_t encodeCanId(uint8_t sender, uint8_t receiver, uint8_t header, uint8_t h
 void decodeCanId(uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &header, uint8_t &header_flag);
 
 struct count_id {
-    int id;
+    uint8_t id;
     int c;
 };
 
@@ -20,6 +20,8 @@ private:
     // uint16_t nodeId;            // Node's CAN ID
 
 public:
+    uint8_t nodeId, num_nodes;
+
     explicit boot();  // Constructor (uint16_t id, int size = 10)
     ~boot();  // Destructor
 

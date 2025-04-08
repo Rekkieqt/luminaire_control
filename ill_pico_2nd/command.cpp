@@ -275,6 +275,7 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
       if(val != 0 && val != 1) {Serial.println("err"); break;}
 
       if(i < 0) {Serial.println("err"); break;}
+      if(val == 0) {st = false; ref = PID.r_l;} else {st = true; ref = PID.r_h;}
       if(i == myIdentifier) {
         occ_st = st; 
         PID.set_reference(ref); 
@@ -285,8 +286,7 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
         hermes->ser_req(inner_frame,(uint8_t)i, set_occ);
         Serial.print("Request sent to ");Serial.println(i,HEX);
       }
-      if(val == 0) {st = false; ref = PID.r_l;} else {st = true; ref = PID.r_h;}
-      
+
       break;
     }
     case 's':{

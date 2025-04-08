@@ -12,6 +12,8 @@
 #include "init.h"
 #include "boot.h"
 
+uint8_t myIdentifier{0};
+uint8_t maxId{0};
 
 /*---------- GLOBAL VARIABLES ----------*/
 // pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 1.5, 6, 0, 0.07, 0.05, 0.025, 0.003}; // PID controller initialization
@@ -115,8 +117,10 @@ void setup() {
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   delay(3000);
-  //hermes.ntwrk_calibration(&inner_frm_core0);
-  //booty.NODE_BOOT(&hermes,&inner_frm_core0);
+  // hermes.ntwrk_calibration(&inner_frm_core0);
+  booty.NODE_BOOT(&hermes,&inner_frm_core0);
+  myIdentifier = booty.nodeId;
+  maxId = booty.num_nodes - 1;
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();

@@ -40,9 +40,9 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     randomValue = 1;
     Serial.print("msg_data: ");
     Serial.println(randomValue);
-    uint16_t can_id = encodeCanId(1,1,1,1);
+    uint16_t can_id = encodeCanId(0,BROADCAST,BOOT,1);
     idConflict = false;
-    int nodeId = randomValue;
+    nodeId = randomValue;
 
     // Store my own nodeId in the buffer
     nodeBuffer = new node_data[1];  
@@ -63,56 +63,59 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
       Serial.println(nodeBuffer[i].id);
     }
 
+    int num_ack{0};
+    uint8_t flag{0};
+    uint8_t zer{0};
     // Listen for responses for 2 seconds
     startTime = millis();
     while (millis() - startTime < 5000) {
         if (hermes->recv_msg(inner_frame)) {
             hermes->process_msg_core0(inner_frame);
 
+                decodeCanId(inner_frame->wrapped.can_msg.can_id, zer, zer, zer, flag);
+                if(flag == ACK){++num_ack; Serial.println("Received 1 ACK!"); continue;}
+                uint64_t receivedId{0};
+                memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
+                Serial.println("MESSAGE RCV:");
+                Serial.println(receivedId);
 
-            uint64_t receivedId{0};
-            memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
-            Serial.println("MESSAGE RCV:");
-            Serial.println(receivedId);
+                if (receivedId == nodeId) {
+                    idConflict = true;
+                    Serial.println("ID Conflict Detected! Retrying...");
+                }
 
+                node_data* temp = new node_data[bufferSize + 1];
+                for (int i = 0; i < bufferSize; i++) {
+                    temp[i] = nodeBuffer[i];
+                }
+                temp[bufferSize].id = receivedId;
+                bufferSize++;
 
-            if (receivedId == nodeId) {
-                idConflict = true;
-                Serial.println("ID Conflict Detected! Retrying...");
-            }
+                delete[] nodeBuffer; // Free old memory
+                nodeBuffer = temp;
 
-                
-
-            node_data* temp = new node_data[bufferSize + 1];
-            for (int i = 0; i < bufferSize; i++) {
-                temp[i] = nodeBuffer[i];
-            }
-            temp[bufferSize].id = receivedId;
-            bufferSize++;
-
-            delete[] nodeBuffer; // Free old memory
-            nodeBuffer = temp;
-
-            Serial.print("Stored CAN Message from node ID: ");
-            Serial.println(receivedId);
-            
+                Serial.print("Stored CAN Message from node ID: ");
+                Serial.println(receivedId);            
         }
     }
-
-    //Necessito de enviar um ack
-    int num_ack=0;
-    while (num_ack<(bufferSize-1))
+    can_id = encodeCanId(0,BROADCAST,BOOT,ACK);
+    while (!hermes->send_msg(inner_frame, can_id, &randomValue, sizeof(randomValue)))
     {
-        if (hermes->recv_msg(inner_frame)) {
+        continue;
+    }
+    can_id = encodeCanId(0,BROADCAST,BOOT,2);
+    // //Necessito de enviar um ack
+    startTime = millis();
+    while(num_ack < bufferSize - 1 && (time_us_64()/1000 - startTime) < THIRTY_SEC ) {
+        if(hermes->recv_msg(inner_frame)){
             hermes->process_msg_core0(inner_frame);
-            //verificar se é ack
-            num_ack++;
-
+            decodeCanId(inner_frame->wrapped.can_msg.can_id, zer, zer, zer, flag);
+            num_ack = (flag == ACK) ? ++num_ack : num_ack;
+            if(flag==ACK) Serial.println("Received 1 ACK!");
         }
     }
-    
-
     uniqueBuffer = new count_id[bufferSize];
+    uniquevalues=0;
 
     for (int i = 0; i < bufferSize; i++) {
         int currentId = nodeBuffer[i].id;
@@ -144,37 +147,28 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     node_data* nodes = nullptr; 
     nodes = new node_data[bufferSize];  
     nodes[0] = {0, 0.0f}; // Initialize with 0.0 for G
-    int num_nodes = 0;
+    num_nodes = 0;
 
     for (int i = 0; i < uniquevalues; i++)
     {
         if (uniqueBuffer[i].c>1)
         {
             conflicts+=uniqueBuffer[i].c;
-            
         }else{
             nodes[num_nodes].id=uniqueBuffer[i].id;
             num_nodes++;
-
         }
-        
     }
-    
-
-
+    Serial.println("/..................................................................................../");
+    Serial.printf("conf: %d\n",conflicts);
     if(idConflict) {
-
         do {
-
             //delete[] nodeBuffer; // Free old memory
             bufferSize=0;
-
             Serial.println("Entrei paara corrigir minha colisao");
-    
     
             do {//Get random value different from node buffer
                 randomValue = rand() % 255;
-        
                 bool exists = false;
                 for (int i = 0; i < num_nodes; i++) {
                     if (nodes[i].id == randomValue) {
@@ -183,18 +177,15 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                     }
                 }
                 if (!exists) break;
-                
             } while (true);
             nodeId= randomValue;
             Serial.println("ESTE VAI OUTRA VEZ");
             Serial.println(randomValue);
     
-    
             while (!hermes->send_msg(inner_frame, can_id, &randomValue, sizeof(randomValue)))
             {
                 continue;
             }
-
             // Allocate memory for a new node
             node_data* temp = new node_data[bufferSize + 1];
             for (int i = 0; i < bufferSize; i++) {
@@ -210,7 +201,6 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             int a=1;
             idConflict=false;
             while(a<conflicts){
-    
                 if (hermes->recv_msg(inner_frame)) {
                     hermes->process_msg_core0(inner_frame);
                     a++;
@@ -220,14 +210,10 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                     Serial.println("MESSAGE RCV:");
                     Serial.println(receivedId);
 
-
                     if (receivedId == nodeId) {
                         idConflict = true;
                         Serial.println("ID Conflict Detected! Retrying...");
-
-                    }
-        
-                        
+                    } 
         
                     node_data* temp = new node_data[bufferSize + 1];
                     for (int i = 0; i < bufferSize; i++) {
@@ -241,12 +227,12 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
         
                     Serial.print("Stored CAN Message from node ID: ");
                     Serial.println(receivedId);
-
                 }
             }
             
             delete[] uniqueBuffer;
             uniqueBuffer = new count_id[bufferSize];
+            uniquevalues=0;
 
             for (int i = 0; i < bufferSize; i++) {
                 int currentId = nodeBuffer[i].id;
@@ -266,42 +252,32 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                     uniquevalues++;
                 }
             }
-
+            
             conflicts=0;
             for (int i = 0; i < uniquevalues; i++)
             {
                 if (uniqueBuffer[i].c>1)
                 {
                     conflicts+=uniqueBuffer[i].c;
-                    
                 }else{
                     nodes[num_nodes].id=uniqueBuffer[i].id;
                     num_nodes++;
-        
                 }
-                
             }
-                    
-   
+            Serial.printf("conf: %d\n",conflicts);
     
         } while (idConflict);  // Keep retrying until a unique ID is assigned
-
-
-
     }
     //UPDATE nodeBuffer when my id is already correct
     while (conflicts>0)
     {
-
         Serial.println("corrigir a dos outros");
-
         delete[] nodeBuffer; // Free old memory
 
         //rcv and read the number of times of the conflicts
         int a=1;
         idConflict=false;
         while(a<conflicts){
-
             if (hermes->recv_msg(inner_frame)) {
                 hermes->process_msg_core0(inner_frame);
                 a++;
@@ -311,14 +287,10 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
                 Serial.println("MESSAGE RCV:");
                 Serial.println(receivedId);
 
-
                 if (receivedId == nodeId) {
                     idConflict = true;
                     Serial.println("ID Conflict Detected! Retrying...");
-
                 }
-    
-                    
     
                 node_data* temp = new node_data[bufferSize + 1];
                 for (int i = 0; i < bufferSize; i++) {
@@ -332,12 +304,12 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     
                 Serial.print("Stored CAN Message from node ID: ");
                 Serial.println(receivedId);
-
             }
         }
         
         delete[] uniqueBuffer;
         uniqueBuffer = new count_id[bufferSize];
+        uniquevalues=0;
 
         for (int i = 0; i < bufferSize; i++) {
             int currentId = nodeBuffer[i].id;
@@ -364,30 +336,37 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             if (uniqueBuffer[i].c>1)
             {
                 conflicts+=uniqueBuffer[i].c;
-                
             }else{
                 nodes[num_nodes].id=uniqueBuffer[i].id;
                 num_nodes++;
-    
             }
-            
         }
-
-
+    }
+    //Bubblesort to order the nodes 
+    for (uint8_t i = 0; i < num_nodes - 1; i++) {
+        for (uint8_t j = 0; j < num_nodes - i - 1; j++) {
+            if (nodes[j].id > nodes[j + 1].id) {
+                node_data temp = nodes[j];
+                nodes[j] = nodes[j + 1];
+                nodes[j + 1] = temp;
+            }
+        }
     }
 
-
-
+    Serial.println("\nFinal Node Buffer:");
+    for (uint8_t i = 0; i < num_nodes; i++) {
+        if (nodeId == nodes[i].id)
+        {
+            nodeId= i;
+        }
+        
+      Serial.print("Node ID: ");
+      Serial.println(nodes[i].id);
+    //   Serial.print(" | G: ");
+    //   Serial.println(nodes[i].G, 6); // Print float with 6 decimal places
+    }
 
     Serial.print("Node initialized successfully with ID: ");
     Serial.println(nodeId);
 
-
-    Serial.println("\nFinal Node Buffer:");
-    for (int i = 0; i < num_nodes; i++) {
-      Serial.print("Node ID: ");
-      Serial.print(nodes[i].id);
-      Serial.print(" | G: ");
-      Serial.println(nodes[i].G, 6); // Print float with 6 decimal places
-  }
 }

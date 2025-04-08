@@ -12,7 +12,7 @@ int my_id{2};
 // when(response counter = total_nodes - 1) calc new lbd solution -> if(not converged) broadcast; else *stop* |(not converged)-> keep on ->
 // if(response arrives) increment response counter + update values -> when(response counter = total_nodes -1) repeat
 
-void contraint(float& h, const float* x, const float*A, const float b, const int my_id){
+void constraint(float& h, const float* x, const float*A, const float b, const int my_id){
   float line_sum{0};
   for(int j = 0; j < total_nodes; j++){
     line_sum = A[my_id * total_nodes + j]*x[j]; // A = -K

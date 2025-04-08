@@ -16,7 +16,7 @@ class canbus_comm
     id_data id;
     static can_data_decoder can_gut; // for msg send and recv modifications
     uint8_t myId{myIdentifier};
-    uint16_t NUM_NODES{2};
+    uint16_t NUM_NODES{maxId};
     float * cxgains{nullptr};
     //uint64_t can_data;
     //stream vars

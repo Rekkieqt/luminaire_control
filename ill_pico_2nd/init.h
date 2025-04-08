@@ -4,8 +4,8 @@
 #include "can.h"
 #include "init.h"
 #include "pid.h"
-#define myIdentifier 1
-#define maxId 2
+extern uint8_t myIdentifier;
+extern uint8_t maxId;
 
 /*---------- common.h ----------*/
 #define LDR_PIN A0
@@ -18,7 +18,7 @@
 
 #define SAMPLE_TIME 10 // ms
 
-#define CIRC_NUM 1
+#define CIRC_NUM 2
 
 extern bool SERIAL_PRINTS_0;
 extern bool SERIAL_PRINTS_1;
@@ -132,7 +132,7 @@ struct data_reads { // data written by the controller loop seq
 };
 
 struct node_data {
-    int id;
+    uint8_t id;
     float G;
 };
 

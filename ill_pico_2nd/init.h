@@ -4,6 +4,8 @@
 #include "can.h"
 #include "init.h"
 #include "pid.h"
+#define myIdentifier 1
+#define maxId 2
 
 /*---------- common.h ----------*/
 #define LDR_PIN A0
@@ -52,7 +54,8 @@ enum static_parameters {
     Nfilter = 11, //measuring vout
     ONE_SEC_MS = 1000, // one second wait in millis
     TEN_SEC = 10000, // one second wait in millis
-    FIVE_SEC = 5000 // one second wait in millis
+    FIVE_SEC = 5000, // five second wait in millis
+    THIRTY_SEC = 30000 // thirty second wait in millis
 };
 
 enum inr_frm_header_types { // type of messages between cores through internal fifo
@@ -70,14 +73,29 @@ enum can_bus_headers { // type of can message
     SER_COM = 0x02, //for serial
     REFERENCE = 0x03, //for consensus control
     RESTART = 0x04, //for consensus control
-    // 4 remaining types 
+    STREAM = 0X05,
+    // 3 remaining types 
 /*-----------------------------*/
 
-/*---------- HEADER FLAGS ----------*/
+/*---------- GENERIC HEADER FLAGS ----------*/
     ACK = 0x00, //msg for acceptance
     REQ = 0x01, //msg for request
     ERR = 0x02, //msg for error
     UNDEFINED = 0x03, // for an additional message
+/*-----------------------------*/
+/*---------- STREAM SPECIFIC HEADER FLAGS ----------*/
+    LUX = 0x02, // for y 
+    MIU = 0x03, // for u
+/*-----------------------------*/
+/*---------- CALIBRATION SPECIFIC HEADER FLAGS ----------*/
+    START = 0x01, // for y 
+    END = 0x02, // for u
+    UNDEFC = 0x03, // for u
+/*-----------------------------*/
+/*---------- SERIAL SPECIFIC HEADER FLAGS ----------*/
+    GETS = 0x01, // for y 
+    SETS = 0x02, // for u
+    UNDEFS = 0x03, // for u
 /*-----------------------------*/
 /*---------- SPECIAL ADRESSES ----------*/
     BROADCAST = 0x00 
@@ -91,7 +109,8 @@ enum canbus_parameters {
     RXpin = 16,
     CSpin = 17,
     INTpin = 20,
-    SPIclock = 10000000
+    SPIclock = 10000000,
+    ID_MASK = 0x38
 };
 
 union msg_to_can { //internal frame between core comunications
@@ -135,48 +154,48 @@ union can_data_decoder {   //can data decoding
 };
 
 enum serial_canbus_requests {
-    // Sets (0x01 - 0x03)
+    // Sets (0x01 - 0x05)
     set_ref = 0x01,
-    set_u = 0x02,
-    set_occ = 0x03,
-    set_aa = 0x22,
-    set_fb = 0x23,
+    set_u,
+    set_occ,
+    set_aa,
+    set_fb,
 
-    // Gets (0x04 - 0x13)
-    get_ref = 0x04,
-    get_u = 0x05,
-    get_y = 0x06,
-    get_volt = 0x07,
-    get_occ = 0x08,
-    get_aa = 0x09,
-    get_fb = 0x0A,
-    get_dist = 0x0B,
-    get_pwr = 0x0C,
-    get_Rtime = 0x0D,
-    get_buff_u = 0x0E,
-    get_buff_y = 0x0F,
+    // Gets (0x06 - 0x11)
+    get_ref,
+    get_u,
+    get_y,
+    get_volt,
+    get_occ,
+    get_aa,
+    get_fb,
+    get_dist,
+    get_pwr,
+    get_Rtime,
+    get_buff_u,
+    get_buff_y,
 
-    // Performance metrics (0x14 - 0x16)
-    get_flicker = 0x14,
-    get_vis = 0x15,
-    get_energy = 0x16,
+    // Performance metrics (0x12 - 0x14)
+    get_flicker,
+    get_vis,
+    get_energy,
 
-    // Streams (0x17 - 0x1A)
-    start_stream_u = 0x17,
-    start_stream_y = 0x18,
-    stop_stream_u = 0x19,
-    stop_stream_y = 0x1A,
+    // Streams (0x15 - 0x18)
+    start_stream_u,
+    start_stream_y,
+    stop_stream_u,
+    stop_stream_y,
 
-    // Distribution (0x1B - 0x21)
-    get_lower_bound_occ = 0x1B,
-    set_lower_bound_occ = 0x1C,
-    get_lower_bound_unocc = 0x1D,
-    set_lower_bound_unocc = 0x1E,
-    get_curr_cost = 0x1F,
-    get_curr_lum = 0x20,
-    set_curr_cost = 0x21,
+    // Distribution (0x19 - 0x1F)
+    get_lower_bound_occ,
+    set_lower_bound_occ,
+    get_lower_bound_unocc,
+    set_lower_bound_unocc,
+    get_curr_cost,
+    get_curr_lum,
+    set_curr_cost,
 
-    // Reset (unchanged)
+    // Reset
     reset = 0xFF
 };
 

@@ -36,7 +36,6 @@ float luxmeter(float v){
   return static_cast<float>(pow(R0/(Rl),static_cast<float>(1)/gamma_)); // Measured Iluminance (Lx)
 }
 
-
 void get_ldr_params(float cal_params[2]){
   cal_params[0] = gamma_;
   cal_params[1] = (CIRC_NUM == 1) ? (300000) :

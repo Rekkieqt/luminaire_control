@@ -34,6 +34,7 @@ bool print_buff{false};
 bool SERIAL_PRINTS_0{false};
 bool SERIAL_PRINTS_1{false};
 bool dn_special_print{false};
+bool stream_delay{false};
 
 float v{0};
 float uk_1{0};
@@ -41,10 +42,12 @@ float uk_2{0};
 
 char x{'\0'};
 bool printing{false};
+/*-----------------------------*/
 
 /*---------- PID INTERRUPT FLAG N TIMER ----------*/
 volatile bool ctrler_flag{false};
 struct repeating_timer pid_timer;
+/*-----------------------------*/
 
 /*---------- CAN BUS AND FIFO FRAMES ----------*/
 MCP2515 canbuz {spi0, CSpin, TXpin, RXpin, SCKpin, SPIclock}; // canbus init 
@@ -66,7 +69,7 @@ bool timer_seq( struct repeating_timer *t ){
   time_to_write = true;
   return true;
 }
-
+/*-----------------------------*/
 /*---------- SPINLOCK / MUTEX ----------*/
 //empty for now
 
@@ -112,12 +115,13 @@ void setup() {
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   delay(3000);
-  booty.NODE_BOOT(&hermes,&inner_frm_core0);
+  //hermes.ntwrk_calibration(&inner_frm_core0);
+  //booty.NODE_BOOT(&hermes,&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
-  PID.set_system_gain_n_dist(G, d);
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
+  PID.set_system_gain(G);
 
   /*---------- SYS SIM ----------*/
   observer.init_sim(1.0f/Fs, G, d);
@@ -134,7 +138,7 @@ void setup() {
 void loop() {
   if(ctrler_flag) { //every control seq
     ctrler_flag = false;  
-
+    stream_delay = true;
     /*---------- DATA SYNC ----------*/
     //data printing
     uint32_t irq_state = save_and_disable_interrupts();
@@ -179,7 +183,8 @@ void loop() {
   }
 
   /*---------- SERIAL RECEIVER ----------*/
-  if(Serial.available()) get_command(v, print_data.out, print_data.u, ener, flicker, vis_err, N, &data_log);
+
+  if(Serial.available()) get_command(v, print_data.out, print_data.u, ener, flicker, vis_err, N, &data_log, &hermes, &inner_frm_core0);
 
   /*---------- CAN BUS FRAME SENDING / FIFO FRAME RECEPTION ----------*/
   if(time_to_write) {
@@ -189,13 +194,22 @@ void loop() {
     //hermes.send_msg(&inner_frm_core0, node_id, &(counter++), sizeof(counter));
   }
   hermes.recv_msg(&inner_frm_core0);
-  hermes.process_msg_core0(&inner_frm_core0);
+  hermes.process_msg_core0(&inner_frm_core0, &stream_delay);
 }
 
 void setup1() {
   Serial.begin();
   canbuz.reset();
   canbuz.setBitrate(CAN_1000KBPS);
+  /*-------------------- MASK AND FILTER SET--------------------*/
+  canbuz.setFilterMask(MCP2515::MASK0, 0, ID_MASK);
+  //uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag
+  canbuz.setFilter(MCP2515::RXF0, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0));
+  canbuz.setFilter(MCP2515::RXF1, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0)); 
+  canbuz.setFilterMask(MCP2515::MASK1, 0, ID_MASK);
+  canbuz.setFilter(MCP2515::RXF3, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0)); 
+  canbuz.setFilter(MCP2515::RXF2, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0));
+  /*---------------------------------------------------------*/
   canbuz.setNormalMode();
   //canbuz.setLoopbackMode();
 

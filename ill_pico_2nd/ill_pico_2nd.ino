@@ -120,9 +120,9 @@ void setup() {
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();
+  PID.set_system_gain_n_dist(G, d);
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
-  PID.set_system_gain(G);
-
+  
   /*---------- SYS SIM ----------*/
   observer.init_sim(1.0f/Fs, G, d);
   

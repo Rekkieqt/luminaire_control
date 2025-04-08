@@ -29,16 +29,15 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     srand(micros()); // Seed random generator
     uint64_t randomValue;
     bool idConflict;
-    int conflits = 0;
+    int conflicts = 0;
 
     node_data* nodeBuffer = nullptr;  // Dynamic array for storing node messages
     int bufferSize = 0;               // Number of stored elements
 
-    node_data* duplicatesBuffer = nullptr;
-    int duplicatesCount = 0;
-    int num_of_msg=1;
+    count_id* uniqueBuffer = nullptr;
+    int uniquevalues = 0;
 
-    randomValue = rand() % 256;
+    randomValue = 1;
     Serial.print("msg_data: ");
     Serial.println(randomValue);
     uint16_t can_id = encodeCanId(1,1,1,1);
@@ -69,119 +68,116 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     while (millis() - startTime < 5000) {
         if (hermes->recv_msg(inner_frame)) {
             hermes->process_msg_core0(inner_frame);
-            num_of_msg++;
-            //memcpy is sugested... maybe change the process_msg function a bit ...
+
+
             uint64_t receivedId{0};
             memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
             Serial.println("MESSAGE RCV:");
             Serial.println(receivedId);
 
-            // If another node has the same ID, regenerate
+
             if (receivedId == nodeId) {
                 idConflict = true;
                 Serial.println("ID Conflict Detected! Retrying...");
-                //break;  // Exit early to regenerate ID
-            }
-            
-
-            // Serial.println("\n Middle Node Buffer:");
-            // for (int i = 0; i < bufferSize; i++) {
-            //   Serial.print("Node ID: ");
-            //   Serial.println(nodeBuffer[i].id);
-            // }
-
-
-            // Check if message is already in the buffer
-            bool duplicate=false;
-            bool found = false;
-            for (int i = 0; i < bufferSize; i++) {
-                if (nodeBuffer[i].id == receivedId) {
-                    Serial.println("Entreiiiii");
-                    found = true;
-                    // Remove the duplicate by shifting elements
-                    for (int j = i; j < bufferSize - 1; j++) {
-                        nodeBuffer[j] = nodeBuffer[j + 1];
-                    }
-                    bufferSize--; // Reduce size
-                    Serial.print("Removed duplicate message from node ID: ");
-                    Serial.println(receivedId);
-
-
-                    // Store duplicate ID in duplicatesBuffer
-                    node_data* tempDup = new node_data[duplicatesCount + 1];
-
-                    for (int k = 0; k < duplicatesCount; k++) {
-                        tempDup[k] = duplicatesBuffer[k];
-                    }
-
-                    tempDup[duplicatesCount].id = receivedId;
-
-                    duplicatesCount++;
-                    conflits+=2;
-                    duplicate=true;
-
-                    delete[] duplicatesBuffer;
-                    duplicatesBuffer = tempDup;
-
-                    break;
-                }
             }
 
-            if (duplicate==false)
-            {
-
-                for (int i_ = 0; i_ < duplicatesCount; i_++)
-                {
-                    if (duplicatesBuffer[i_].id==receivedId)
-                    {
-                        duplicate=true;
-                        conflits++;
-                    }
-                    
-                }
                 
+
+            node_data* temp = new node_data[bufferSize + 1];
+            for (int i = 0; i < bufferSize; i++) {
+                temp[i] = nodeBuffer[i];
             }
+            temp[bufferSize].id = receivedId;
+            bufferSize++;
 
-            //substituir no if por !duplicate
+            delete[] nodeBuffer; // Free old memory
+            nodeBuffer = temp;
 
-            if (!duplicate) {
-                // Allocate memory for a new node
-                node_data* temp = new node_data[bufferSize + 1];
-                for (int i = 0; i < bufferSize; i++) {
-                    temp[i] = nodeBuffer[i];
-                }
-                temp[bufferSize].id = receivedId;
-                bufferSize++;
-
-                delete[] nodeBuffer; // Free old memory
-                nodeBuffer = temp;
-
-                Serial.print("Stored CAN Message from node ID: ");
-                Serial.println(receivedId);
-            }
+            Serial.print("Stored CAN Message from node ID: ");
+            Serial.println(receivedId);
             
         }
     }
 
-    Serial.println("acabou o while 1");
-    Serial.println(idConflict);
-    Serial.println(conflits);
+    //Necessito de enviar um ack
+    int num_ack=0;
+    while (num_ack<(bufferSize-1))
+    {
+        if (hermes->recv_msg(inner_frame)) {
+            hermes->process_msg_core0(inner_frame);
+            //verificar se é ack
+            num_ack++;
+
+        }
+    }
+    
+
+    uniqueBuffer = new count_id[bufferSize];
+
+    for (int i = 0; i < bufferSize; i++) {
+        int currentId = nodeBuffer[i].id;
+        bool found = false;
+    
+        for (int j = 0; j < uniquevalues; j++) {
+            if (uniqueBuffer[j].id == currentId) {
+                uniqueBuffer[j].c++;
+                found = true;
+                break;
+            }
+        }
+    
+        if (!found) {
+            uniqueBuffer[uniquevalues].id = currentId;
+            uniqueBuffer[uniquevalues].c = 1;
+            uniquevalues++;
+        }
+    }
+
+    for (int i = 0; i < uniquevalues; i++) {
+        Serial.print("ID ");
+        Serial.print(uniqueBuffer[i].id);
+        Serial.print(" apareceu ");
+        Serial.print(uniqueBuffer[i].c);
+        Serial.println(" vez(es).");
+    }
+
+    node_data* nodes = nullptr; 
+    nodes = new node_data[bufferSize];  
+    nodes[0] = {0, 0.0f}; // Initialize with 0.0 for G
+    int num_nodes = 0;
+
+    for (int i = 0; i < uniquevalues; i++)
+    {
+        if (uniqueBuffer[i].c>1)
+        {
+            conflicts+=uniqueBuffer[i].c;
+            
+        }else{
+            nodes[num_nodes].id=uniqueBuffer[i].id;
+            num_nodes++;
+
+        }
+        
+    }
+    
+
 
     if(idConflict) {
 
         do {
 
+            //delete[] nodeBuffer; // Free old memory
+            bufferSize=0;
+
             Serial.println("Entrei paara corrigir minha colisao");
     
-            delete[] duplicatesBuffer;
-            duplicatesCount = 0;
     
             do {//Get random value different from node buffer
-                randomValue = rand() % 256;
+                randomValue = rand() % 255;
         
                 bool exists = false;
-                for (int i = 0; i < bufferSize; i++) {
-                    if (nodeBuffer[i].id == randomValue) {
+                for (int i = 0; i < num_nodes; i++) {
+                    if (nodes[i].id == randomValue) {
                         exists = true;
                         break;
                     }
@@ -210,119 +206,83 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             delete[] nodeBuffer; // Free old memory
             nodeBuffer = temp;
     
-            //rcv and read the number of times of the conflits
+            //rcv and read the number of times of the conflicts
             int a=1;
-            while(a<conflits){
+            idConflict=false;
+            while(a<conflicts){
     
                 if (hermes->recv_msg(inner_frame)) {
                     hermes->process_msg_core0(inner_frame);
                     a++;
-                    conflits=0;
-                    num_of_msg++;//talvez não seja necessário
-                    //memcpy is sugested... maybe change the process_msg function a bit ...
+                    
                     uint64_t receivedId{0};
                     memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
                     Serial.println("MESSAGE RCV:");
                     Serial.println(receivedId);
-        
-                    // If another node has the same ID, regenerate
+
+
                     if (receivedId == nodeId) {
                         idConflict = true;
                         Serial.println("ID Conflict Detected! Retrying...");
-                        //break;  // Exit early to regenerate ID
-                    }
-                    
-        
-                    // Serial.println("\n Middle Node Buffer:");
-                    // for (int i = 0; i < bufferSize; i++) {
-                    //   Serial.print("Node ID: ");
-                    //   Serial.println(nodeBuffer[i].id);
-                    // }
-        
-        
-                    // Check if message is already in the buffer
-                    bool duplicate=false;
-                    bool found = false;
-                    for (int i = 0; i < bufferSize; i++) {
-                        if (nodeBuffer[i].id == receivedId) {
-                            found = true;
-                            // Remove the duplicate by shifting elements
-                            for (int j = i; j < bufferSize - 1; j++) {
-                                nodeBuffer[j] = nodeBuffer[j + 1];
-                            }
-                            bufferSize--; // Reduce size
-                            Serial.print("Removed duplicate message from node ID: ");
-                            Serial.println(receivedId);
-        
-        
-                            // Store duplicate ID in duplicatesBuffer
-                            node_data* tempDup = new node_data[duplicatesCount + 1];
-        
-                            for (int k = 0; k < duplicatesCount; k++) {
-                                tempDup[k] = duplicatesBuffer[k];
-                            }
-        
-                            tempDup[duplicatesCount].id = receivedId;
-        
-                            duplicatesCount++;
-                            conflits+=2;
-                            duplicate=true;
-        
-                            delete[] duplicatesBuffer;
-                            duplicatesBuffer = tempDup;
-        
-                            break;
-                        }
+
                     }
         
-                    if (duplicate==false)
-                    {
-        
-                        for (int i_ = 0; i_ < duplicatesCount; i_++)
-                        {
-                            if (duplicatesBuffer[i_].id==receivedId)
-                            {
-                                duplicate=true;
-                                conflits++;
-                            }
-                            
-                        }
                         
+        
+                    node_data* temp = new node_data[bufferSize + 1];
+                    for (int i = 0; i < bufferSize; i++) {
+                        temp[i] = nodeBuffer[i];
                     }
+                    temp[bufferSize].id = receivedId;
+                    bufferSize++;
         
-                    //substituir no if por !duplicate
+                    delete[] nodeBuffer; // Free old memory
+                    nodeBuffer = temp;
         
-                    if (!duplicate) {
-                        // Allocate memory for a new node
-                        node_data* temp = new node_data[bufferSize + 1];
-                        for (int i = 0; i < bufferSize; i++) {
-                            temp[i] = nodeBuffer[i];
-                        }
-                        temp[bufferSize].id = receivedId;
-                        bufferSize++;
-        
-                        delete[] nodeBuffer; // Free old memory
-                        nodeBuffer = temp;
-        
-                        Serial.print("Stored CAN Message from node ID: ");
-                        Serial.println(receivedId);
+                    Serial.print("Stored CAN Message from node ID: ");
+                    Serial.println(receivedId);
+
+                }
+            }
+            
+            delete[] uniqueBuffer;
+            uniqueBuffer = new count_id[bufferSize];
+
+            for (int i = 0; i < bufferSize; i++) {
+                int currentId = nodeBuffer[i].id;
+                bool found = false;
+            
+                for (int j = 0; j < uniquevalues; j++) {
+                    if (uniqueBuffer[j].id == currentId) {
+                        uniqueBuffer[j].c++;
+                        found = true;
+                        break;
                     }
-                    
                 }
             
+                if (!found) {
+                    uniqueBuffer[uniquevalues].id = currentId;
+                    uniqueBuffer[uniquevalues].c = 1;
+                    uniquevalues++;
+                }
             }
 
-            //verificar se esta no nodeBuffercom for e por idConflit=false;
-
-                    for (int i_ = 0; i_ < bufferSize; i_++)
-                        {
-                            if (nodeBuffer[i_].id==nodeId)
-                            {
-                                idConflict=false;
-
-                            }
-                            
-                        }
+            conflicts=0;
+            for (int i = 0; i < uniquevalues; i++)
+            {
+                if (uniqueBuffer[i].c>1)
+                {
+                    conflicts+=uniqueBuffer[i].c;
+                    
+                }else{
+                    nodes[num_nodes].id=uniqueBuffer[i].id;
+                    num_nodes++;
+        
+                }
+                
+            }
+                    
+   
     
         } while (idConflict);  // Keep retrying until a unique ID is assigned
 
@@ -330,115 +290,88 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
 
     }
     //UPDATE nodeBuffer when my id is already correct
-    while (conflits>0)
+    while (conflicts>0)
     {
-        delete[] duplicatesBuffer;
-        duplicatesCount = 0;
 
         Serial.println("corrigir a dos outros");
 
-        //rcv and read the number of times of the conflits
-        int a=0;
-        while(a<conflits){
+        delete[] nodeBuffer; // Free old memory
+
+        //rcv and read the number of times of the conflicts
+        int a=1;
+        idConflict=false;
+        while(a<conflicts){
 
             if (hermes->recv_msg(inner_frame)) {
                 hermes->process_msg_core0(inner_frame);
                 a++;
-                conflits=0;
-                num_of_msg++;//talvez não seja necessário
-                //memcpy is sugested... maybe change the process_msg function a bit ...
+                
                 uint64_t receivedId{0};
                 memcpy(&receivedId, inner_frame->wrapped.can_msg.data, sizeof(uint64_t));
                 Serial.println("MESSAGE RCV:");
                 Serial.println(receivedId);
-    
-                // If another node has the same ID, regenerate
+
+
                 if (receivedId == nodeId) {
                     idConflict = true;
                     Serial.println("ID Conflict Detected! Retrying...");
-                    //break;  // Exit early to regenerate ID
-                }
-                
-    
-                // Serial.println("\n Middle Node Buffer:");
-                // for (int i = 0; i < bufferSize; i++) {
-                //   Serial.print("Node ID: ");
-                //   Serial.println(nodeBuffer[i].id);
-                // }
-    
-    
-                // Check if message is already in the buffer
-                bool duplicate=false;
-                bool found = false;
-                for (int i = 0; i < bufferSize; i++) {
-                    if (nodeBuffer[i].id == receivedId) {
-                        found = true;
-                        // Remove the duplicate by shifting elements
-                        for (int j = i; j < bufferSize - 1; j++) {
-                            nodeBuffer[j] = nodeBuffer[j + 1];
-                        }
-                        bufferSize--; // Reduce size
-                        Serial.print("Removed duplicate message from node ID: ");
-                        Serial.println(receivedId);
-    
-    
-                        // Store duplicate ID in duplicatesBuffer
-                        node_data* tempDup = new node_data[duplicatesCount + 1];
-    
-                        for (int k = 0; k < duplicatesCount; k++) {
-                            tempDup[k] = duplicatesBuffer[k];
-                        }
-    
-                        tempDup[duplicatesCount].id = receivedId;
-    
-                        duplicatesCount++;
-                        conflits+=2;
-                        duplicate=true;
-    
-                        delete[] duplicatesBuffer;
-                        duplicatesBuffer = tempDup;
-    
-                        break;
-                    }
+
                 }
     
-                if (duplicate==false)
-                {
-    
-                    for (int i_ = 0; i_ < duplicatesCount; i_++)
-                    {
-                        if (duplicatesBuffer[i_].id==receivedId)
-                        {
-                            duplicate=true;
-                            conflits++;
-                        }
-                        
-                    }
                     
+    
+                node_data* temp = new node_data[bufferSize + 1];
+                for (int i = 0; i < bufferSize; i++) {
+                    temp[i] = nodeBuffer[i];
                 }
+                temp[bufferSize].id = receivedId;
+                bufferSize++;
     
-                //substituir no if por !duplicate
+                delete[] nodeBuffer; // Free old memory
+                nodeBuffer = temp;
     
-                if (!duplicate) {
-                    // Allocate memory for a new node
-                    node_data* temp = new node_data[bufferSize + 1];
-                    for (int i = 0; i < bufferSize; i++) {
-                        temp[i] = nodeBuffer[i];
-                    }
-                    temp[bufferSize].id = receivedId;
-                    bufferSize++;
-    
-                    delete[] nodeBuffer; // Free old memory
-                    nodeBuffer = temp;
-    
-                    Serial.print("Stored CAN Message from node ID: ");
-                    Serial.println(receivedId);
+                Serial.print("Stored CAN Message from node ID: ");
+                Serial.println(receivedId);
+
+            }
+        }
+        
+        delete[] uniqueBuffer;
+        uniqueBuffer = new count_id[bufferSize];
+
+        for (int i = 0; i < bufferSize; i++) {
+            int currentId = nodeBuffer[i].id;
+            bool found = false;
+        
+            for (int j = 0; j < uniquevalues; j++) {
+                if (uniqueBuffer[j].id == currentId) {
+                    uniqueBuffer[j].c++;
+                    found = true;
+                    break;
                 }
-                
             }
         
+            if (!found) {
+                uniqueBuffer[uniquevalues].id = currentId;
+                uniqueBuffer[uniquevalues].c = 1;
+                uniquevalues++;
+            }
         }
 
+        conflicts=0;
+        for (int i = 0; i < uniquevalues; i++)
+        {
+            if (uniqueBuffer[i].c>1)
+            {
+                conflicts+=uniqueBuffer[i].c;
+                
+            }else{
+                nodes[num_nodes].id=uniqueBuffer[i].id;
+                num_nodes++;
+    
+            }
+            
+        }
 
 
     }
@@ -451,10 +384,10 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
 
 
     Serial.println("\nFinal Node Buffer:");
-    for (int i = 0; i < bufferSize; i++) {
+    for (int i = 0; i < num_nodes; i++) {
       Serial.print("Node ID: ");
-      Serial.print(nodeBuffer[i].id);
+      Serial.print(nodes[i].id);
       Serial.print(" | G: ");
-      Serial.println(nodeBuffer[i].G, 6); // Print float with 6 decimal places
+      Serial.println(nodes[i].G, 6); // Print float with 6 decimal places
   }
 }

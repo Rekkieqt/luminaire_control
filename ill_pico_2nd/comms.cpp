@@ -107,13 +107,13 @@ bool canbus_comm::process_msg_core0(msg_to_can* inner_frame, bool *stream_en) { 
         Serial.print("Header ");Serial.println(id.header,HEX);
         Serial.print("Header flag ");Serial.println(id.header_flag,HEX);
         Serial.print("Msg dlc ");Serial.println(inner_frame->wrapped.can_msg.can_dlc);
-        Serial.print("Gut Size ");Serial.println(sizeof(can_gut));
-        //Serial.print("Data ");Serial.println(can_gut.eight_bytes);
-        Serial.print("Floats [0] ");Serial.println(can_gut.floats[0]);
-        Serial.print("Floats [1] ");Serial.println(can_gut.floats[1]);
-        Serial.print("Type of Request [0] ");Serial.println(can_gut.bytes[0]);
-        Serial.print("Type of Request [4] ");Serial.println(can_gut.bytes[4]);
-        Serial.print("Type of Request [7] ");Serial.println(can_gut.bytes[0]);
+        // Serial.print("Gut Size ");Serial.println(sizeof(can_gut));
+        // //Serial.print("Data ");Serial.println(can_gut.eight_bytes);
+        // Serial.print("Floats [0] ");Serial.println(can_gut.floats[0]);
+        // Serial.print("Floats [1] ");Serial.println(can_gut.floats[1]);
+        // Serial.print("Type of Request [0] ");Serial.println(can_gut.bytes[0]);
+        // Serial.print("Type of Request [4] ");Serial.println(can_gut.bytes[4]);
+        // Serial.print("Type of Request [7] ");Serial.println(can_gut.bytes[0]);
         switch (id.header) {
             case BOOT:
                 // do something
@@ -237,91 +237,193 @@ void canbus_comm::assign_cross_gain_vector() {
     memset(cxgains,0 ,NUM_NODES*sizeof(float));
 }
 
+void canbus_comm::set_ntwrk_params(uint8_t id, uint8_t node_max){
+    myId = id;
+    NUM_NODES = node_max;
+}
+
 void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
-    float u[2] = {0.8, 0.2};
-    float lux{0.0};
+    float u[2] = {0.2, 0.8};
+    float lux[2] = {0.0, 0.0};
     float dist = luxmeter(get_ldr_voltage(LDR_PIN));
-    Serial.print("Getting Background Disturbance...");Serial.println(dist);
-    uint16_t can_id;
+    int n_ack{0};
     uint32_t curr_time{0};
-    Serial.println("Begin Calibration Seq...");// Serial.print(print_data.time);
-    for (int k : u) {
-        for (int n = 1; n <= NUM_NODES; n++) {
-            if (myId == n) {
+    uint16_t can_id;
+
+    Serial.print("Getting Background Disturbance...");Serial.println(dist);
+    can_id = encodeCanId(myId, BROADCAST, CALIBRATION, ACK);
+    send_msg(inner_frame, can_id);
+    curr_time = time_us_64()/1000;
+    while(n_ack < NUM_NODES - 1 && (time_us_64()/1000 - curr_time) < THIRTY_SEC ) {
+        if(recv_msg(inner_frame)){
+            process_msg_core0(inner_frame);
+            n_ack = (id.header_flag == ACK) ? ++n_ack : n_ack;
+            Serial.print("Got confirmation end of read from ...");Serial.println(id.sender,HEX);
+        }       
+    }
+    
+    Serial.println("Begin Calibration Seq...");
+    Serial.printf("%d nodes to calibrate\n", NUM_NODES);
+    for (int n = 1; n <= NUM_NODES; n++) {
+        if (myId == n - 1) {
+            //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+            can_id = encodeCanId(myId, BROADCAST, CALIBRATION, START);
+            //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
+            send_msg(inner_frame, can_id); //find way to send null data 
+            for(int k = 0; k < 2; k++){
                 Serial.println("Calibrating myId...");
-                //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
-                can_id = encodeCanId(myId, BROADCAST, CALIBRATION, START);
-                //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
-                send_msg(inner_frame, can_id); //find way to send null data 
 /*------------------------------- CALIBRATION SEQ ------------------------------------------------*/
                 analogWrite(LED_PIN, static_cast<int>(u[k]*(DAC_RANGE-1)));
                 curr_time = time_us_64()/1000;
+                int cnt{0};
                 while ((time_us_64()/1000 - curr_time) < TEN_SEC) {
-                    lux = luxmeter(get_ldr_voltage(LDR_PIN));                    
-                } 
-                Serial.print("Done Measuring...");Serial.println(lux);
-                can_id = encodeCanId(myId,BROADCAST,CALIBRATION,END); // MAYBE CHANGE FROM REQ TO A DIFF FLAG
-                send_msg(inner_frame, can_id);
-                int k{0};
+                    lux[k] += (luxmeter(get_ldr_voltage(LDR_PIN)));   
+                    cnt++;                 
+                }
+                lux[k] /= cnt; 
+                Serial.print("Done Measuring...");Serial.println(lux[k]);
+                n_ack = 0;
                 curr_time = time_us_64()/1000;
-                while(k < NUM_NODES - 1 && (time_us_64()/1000 - curr_time) < THIRTY_SEC ) {
-                    recv_msg(inner_frame);
-                    if (process_msg_core0(inner_frame)) {
-                        //decodeCanId(inner_frame->wrapped.can_msg.can_id,id.sender,id.receiver,id.header,id.header_flag);
-                        k = (id.header_flag == ACK) ? ++k : k;
+                while(n_ack < NUM_NODES - 1 && (time_us_64()/1000 - curr_time) < THIRTY_SEC ) {
+                    if(recv_msg(inner_frame)){
+                        process_msg_core0(inner_frame);
+                        n_ack = (id.header_flag == ACK) ? ++n_ack : n_ack;
                         Serial.print("Got confirmation end of read from ...");Serial.println(id.sender,HEX);
                     }
                 }
-                Serial.println("Calibration over ...");
-                analogWrite(LED_PIN, 0);
-                cxgains[n - 1] -= lux/(u[0]-u[1]);
-                Serial.print("Updated own gain value "); Serial.println(cxgains[n - 1]);
-                Serial.print("With... "); Serial.println(lux/(u[1]-u[2]));
-                // wait time to let the light die out
-                curr_time = time_us_64()/1000;
-                while((time_us_64()/1000 - curr_time) < FIVE_SEC) { 
-
+                can_id = encodeCanId(myId, BROADCAST, CALIBRATION, ACK);
+                send_msg(inner_frame, can_id);
+            }
+            cxgains[myId] = (lux[1]-lux[0])/(u[1]-u[0]);
+            Serial.printf("Gain %d->%d = %f\n", n-1, myId, cxgains[n-1]);
+            //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+            can_id = encodeCanId(myId, BROADCAST, CALIBRATION, END);
+            //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
+            send_msg(inner_frame, can_id); //find way to send null data 
+            analogWrite(LED_PIN, static_cast<int>(0*(DAC_RANGE-1)));
+        }
+/*-------------------------------------------------------------------------------------------------*/            
+        else {
+            Serial.println("Waiting for a start ...");
+            curr_time = time_us_64()/1000;
+            while((time_us_64()/1000 - curr_time) < THIRTY_SEC) { 
+                if(recv_msg(inner_frame)){
+                    process_msg_core0(inner_frame);
+                    Serial.print("Message from ...");Serial.println(id.sender,HEX);
+                    if (id.header_flag == START && id.sender == n - 1 ) break;
                 }
             }
-/*-------------------------------------------------------------------------------------------------*/            
-            else {
-                Serial.println("Waiting for a start ...");
+            
+            Serial.println("Start received ...");
+            for(int k = 0; k < 2; k++){
+                curr_time = time_us_64()/1000;
+                int cnt{0};
+                while ((time_us_64()/1000 - curr_time) < TEN_SEC) {
+                    lux[k] += (luxmeter(get_ldr_voltage(LDR_PIN))); 
+                    cnt++;                   
+                }
+                lux[k] /= cnt;
+                Serial.print("Done Measuring...");Serial.println(lux[k]);
+                can_id = encodeCanId(myId, n - 1, CALIBRATION, ACK);
+                send_msg(inner_frame, can_id);
                 curr_time = time_us_64()/1000;
                 while((time_us_64()/1000 - curr_time) < THIRTY_SEC) { 
-                    recv_msg(inner_frame);
-                    if(process_msg_core0(inner_frame)) {
-                        Serial.print("Message from ...");Serial.println(id.sender,HEX);
-                        if (id.header_flag == START && id.sender == n ) break;
+                    if(recv_msg(inner_frame)){
+                        process_msg_core0(inner_frame);
+                        if (id.header_flag == ACK && id.sender == n - 1 ) break;
                     }
                 }
-                Serial.println("Request received ...");
-                //process_msg_core0(inner_frame);
-                curr_time = time_us_64()/1000;
-                while (id.header_flag == START && (time_us_64()/1000 - curr_time) < THIRTY_SEC) {
-                    recv_msg(inner_frame);
-                    //cross calibration myId -> current node
-                    lux = luxmeter(get_ldr_voltage(LDR_PIN));
-                    if (process_msg_core0(inner_frame) && id.header_flag == END) { // ASSUMING THE MSG IS END...
-                        Serial.print("Got confirmation to stop cross gain reads from ...");Serial.println(id.sender,HEX);
-                        //uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag
-                        can_id = encodeCanId(myId, n, CALIBRATION, ACK);
-                        //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
-                        send_msg(inner_frame, can_id);
-                    }
-                }
-                Serial.println("Cross calibration end ...");
-                cxgains[n - 1] -= lux/(u[1]-u[2]);
-                Serial.print("Updated cross gain value "); Serial.println(cxgains[n - 1]);
-                Serial.print("With... "); Serial.println(lux/(u[1]-u[2]));
-                // wait time to let the light die out
-                curr_time = time_us_64()/1000;
-                while((time_us_64()/1000 - curr_time) < FIVE_SEC) { 
-
+            }
+            cxgains[n-1] = (lux[1]-lux[0])/(u[1]-u[0]);
+            Serial.printf("Gain %d->%d = %f\n", n-1, myId, cxgains[n-1]);
+            Serial.println("Cross calibration end ...");
+            curr_time = time_us_64()/1000;
+            while((time_us_64()/1000 - curr_time) < THIRTY_SEC) { 
+                if(recv_msg(inner_frame)){
+                    process_msg_core0(inner_frame);
+                    if (id.header_flag == END && id.sender == n - 1 ) break;
                 }
             }
         }
     } 
     Serial.print("Calibration end!");
+//     for (int k : u) {
+//         for (int n = 1; n <= NUM_NODES; n++) {
+//             if (myId == n) {
+//                 Serial.println("Calibrating myId...");
+//                 //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
+//                 can_id = encodeCanId(myId, BROADCAST, CALIBRATION, START);
+//                 //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
+//                 send_msg(inner_frame, can_id); //find way to send null data 
+// /*------------------------------- CALIBRATION SEQ ------------------------------------------------*/
+//                 analogWrite(LED_PIN, static_cast<int>(u[k]*(DAC_RANGE-1)));
+//                 curr_time = time_us_64()/1000;
+//                 while ((time_us_64()/1000 - curr_time) < TEN_SEC) {
+//                     lux = luxmeter(get_ldr_voltage(LDR_PIN));                    
+//                 } 
+//                 Serial.print("Done Measuring...");Serial.println(lux);
+//                 can_id = encodeCanId(myId,BROADCAST,CALIBRATION,END); // MAYBE CHANGE FROM REQ TO A DIFF FLAG
+//                 send_msg(inner_frame, can_id);
+//                 int k{0};
+//                 curr_time = time_us_64()/1000;
+//                 while(k < NUM_NODES - 1 && (time_us_64()/1000 - curr_time) < THIRTY_SEC ) {
+//                     recv_msg(inner_frame);
+//                     if (process_msg_core0(inner_frame)) {
+//                         //decodeCanId(inner_frame->wrapped.can_msg.can_id,id.sender,id.receiver,id.header,id.header_flag);
+//                         k = (id.header_flag == ACK) ? ++k : k;
+//                         Serial.print("Got confirmation end of read from ...");Serial.println(id.sender,HEX);
+//                     }
+//                 }
+//                 Serial.println("Calibration over ...");
+//                 analogWrite(LED_PIN, 0);
+//                 cxgains[n - 1] -= lux/(u[0]-u[1]);
+//                 Serial.print("Updated own gain value "); Serial.println(cxgains[n - 1]);
+//                 Serial.print("With... "); Serial.println(lux/(u[1]-u[2]));
+//                 // wait time to let the light die out
+//                 curr_time = time_us_64()/1000;
+//                 while((time_us_64()/1000 - curr_time) < FIVE_SEC) { 
+
+//                 }
+//             }
+// /*-------------------------------------------------------------------------------------------------*/            
+//             else {
+//                 Serial.println("Waiting for a start ...");
+//                 curr_time = time_us_64()/1000;
+//                 while((time_us_64()/1000 - curr_time) < THIRTY_SEC) { 
+//                     recv_msg(inner_frame);
+//                     if(process_msg_core0(inner_frame)) {
+//                         Serial.print("Message from ...");Serial.println(id.sender,HEX);
+//                         if (id.header_flag == START && id.sender == n ) break;
+//                     }
+//                 }
+//                 Serial.println("Request received ...");
+//                 //process_msg_core0(inner_frame);
+//                 curr_time = time_us_64()/1000;
+//                 while (id.header_flag == START && (time_us_64()/1000 - curr_time) < THIRTY_SEC) {
+//                     recv_msg(inner_frame);
+//                     //cross calibration myId -> current node
+//                     lux = luxmeter(get_ldr_voltage(LDR_PIN));
+//                     if (process_msg_core0(inner_frame) && id.header_flag == END) { // ASSUMING THE MSG IS END...
+//                         Serial.print("Got confirmation to stop cross gain reads from ...");Serial.println(id.sender,HEX);
+//                         //uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag
+//                         can_id = encodeCanId(myId, n, CALIBRATION, ACK);
+//                         //msg_to_can* inner_frame, uint16_t id, void* data=null, size_t = 0
+//                         send_msg(inner_frame, can_id);
+//                     }
+//                 }
+//                 Serial.println("Cross calibration end ...");
+//                 cxgains[n - 1] -= lux/(u[1]-u[2]);
+//                 Serial.print("Updated cross gain value "); Serial.println(cxgains[n - 1]);
+//                 Serial.print("With... "); Serial.println(lux/(u[1]-u[2]));
+//                 // wait time to let the light die out
+//                 curr_time = time_us_64()/1000;
+//                 while((time_us_64()/1000 - curr_time) < FIVE_SEC) { 
+
+//                 }
+//             }
+//         }
+//     } 
+//     Serial.print("Calibration end!");
 }
 
 //decode outside, only go to ser recv 

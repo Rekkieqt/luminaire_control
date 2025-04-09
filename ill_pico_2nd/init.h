@@ -18,7 +18,7 @@ extern uint8_t maxId;
 
 #define SAMPLE_TIME 10 // ms
 
-#define CIRC_NUM 2
+#define CIRC_NUM 3
 
 extern bool SERIAL_PRINTS_0;
 extern bool SERIAL_PRINTS_1;

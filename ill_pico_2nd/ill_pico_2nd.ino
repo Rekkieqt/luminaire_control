@@ -117,10 +117,11 @@ void setup() {
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   delay(3000);
-  // hermes.ntwrk_calibration(&inner_frm_core0);
   booty.NODE_BOOT(&hermes,&inner_frm_core0);
   myIdentifier = booty.nodeId;
   maxId = booty.num_nodes - 1;
+  hermes.set_ntwrk_params();
+  hermes.ntwrk_calibration(&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
   adjust_gain();

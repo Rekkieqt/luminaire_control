@@ -8,6 +8,7 @@
 #include "init.h"
 #include "performance.h"
 
+
 class canbus_comm
 {
   private:
@@ -15,8 +16,8 @@ class canbus_comm
     String eflg_str = "| RX1OV | RX0OV | TXBO | TXEP | RXEP | TXWAR | RXWAR | EWARN | ";
     id_data id;
     static can_data_decoder can_gut; // for msg send and recv modifications
-    uint8_t myId{myIdentifier};
-    uint16_t NUM_NODES{maxId};
+    uint8_t myId{0};
+    uint8_t NUM_NODES{0};
     float * cxgains{nullptr};
     //uint64_t can_data;
     //stream vars
@@ -42,6 +43,7 @@ class canbus_comm
     void ser_reply(msg_to_can* inner_frame);
     void ser_receive(msg_to_can* inner_frame);
     void ntwrk_calibration(msg_to_can* inner_frame);
+    void set_ntwrk_params(uint8_t id = myIdentifier, uint8_t node_max = static_cast<uint8_t>(maxId + 1));
 };
 
 

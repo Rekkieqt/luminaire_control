@@ -2,8 +2,8 @@
 #include "performance.h"
 
 
-float P_max = (CIRC_NUM == 1) ? 0.0173 : // I_LED = 306mV/47Ohm, V_LED = 2.66; P = VI = 0.0173W
-              (CIRC_NUM == 2) ? 0.0177 : // I_LED = 312mV/47Ohm, V_LED = 2.67; P = VI = 0.0177W
+float P_max = (CIRC_NUM == 3) ? 0.0173 : // I_LED = 306mV/47Ohm, V_LED = 2.66; P = VI = 0.0173W
+              (CIRC_NUM == 4) ? 0.0177 : // I_LED = 312mV/47Ohm, V_LED = 2.67; P = VI = 0.0177W
               0.0;
 float inst_power_consumption(float dk_1){
   return P_max*dk_1;

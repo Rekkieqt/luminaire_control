@@ -71,8 +71,7 @@ enum can_bus_headers { // type of can message
     BOOT = 0x00, //generic
     CALIBRATION = 0x01, //for calibration
     SER_COM = 0x02, //for serial
-    REFERENCE = 0x03, //for consensus control
-    RESTART = 0x04, //for consensus control
+    OPTIMIZATION = 0x03, //for consensus control
     STREAM = 0X05,
     // 3 remaining types 
 /*-----------------------------*/
@@ -86,6 +85,10 @@ enum can_bus_headers { // type of can message
 /*---------- STREAM SPECIFIC HEADER FLAGS ----------*/
     LUX = 0x02, // for y 
     MIU = 0x03, // for u
+/*-----------------------------*/
+/*---------- OPTIMIZATION SPECIFIC HEADER FLAGS ----------*/
+    LAMBDA = 0x02, // for lmbd 
+    INPUT_U = 0x03, // for u
 /*-----------------------------*/
 /*---------- CALIBRATION SPECIFIC HEADER FLAGS ----------*/
     START = 0x01, // for y 
@@ -129,6 +132,14 @@ struct data_reads { // data written by the controller loop seq
     volatile float ref{0}; 
     volatile float u{0};
     volatile float sim_out{0};
+};
+
+struct ser_data { // data written by the controller loop seq
+    float N{0};
+    float visibility{0};
+    float energy{0}; 
+    float flicker{0};
+    float voltage{0};
 };
 
 struct node_data {

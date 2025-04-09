@@ -20,6 +20,7 @@ uint8_t maxId{0};
 pid PID {static_cast<float>(SAMPLE_TIME)*1e-3, 15e8, 6e8, 0,8e-10, 7e-10, 4e-10, 0.003}; // PID controller initialization
 ring_buffer data_log; //last minute buffer of events
 data_reads current_data, print_data; //data read inside the control sequence
+ser_data serial_info; // for parsing data into hub network
 sim observer;
 
 bool occ_st{UNOCC}; // occupancy state
@@ -120,7 +121,7 @@ void setup() {
   booty.NODE_BOOT(&hermes,&inner_frm_core0);
   myIdentifier = booty.nodeId;
   maxId = booty.num_nodes - 1;
-  hermes.set_ntwrk_params();
+  hermes.set_ntwrk_params(&canbuz);
   hermes.ntwrk_calibration(&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
@@ -185,9 +186,17 @@ void loop() {
     uk_2 = uk_1;
     uk_1 = print_data.u;
     N++;
+
+  /*------------------------------ SERIAL DATA SYNC ------------------------------*/
+    serial_info.N = N;
+    serial_info.voltage = v;
+    serial_info.energy = ener;
+    serial_info.visibility = vis_err;
+    serial_info.flicker = N;
+    /*----------------------------------------------------------------------------*/
   }
 
-  /*---------- SERIAL RECEIVER ----------*/
+  /*------------------------------ SERIAL RECEIVER ------------------------------*/
 
   if(Serial.available()) get_command(v, print_data.out, print_data.u, ener, flicker, vis_err, N, &data_log, &hermes, &inner_frm_core0);
 
@@ -198,23 +207,24 @@ void loop() {
     //msg_to_can* inner_frame, uint16_t canm_id, void* data = nullptr ,size_t size_data = 0
     //hermes.send_msg(&inner_frm_core0, node_id, &(counter++), sizeof(counter));
   }
+/*--------------------------------------------------------------------*/
   hermes.recv_msg(&inner_frm_core0);
-  hermes.process_msg_core0(&inner_frm_core0, &stream_delay);
+  hermes.process_msg_core0(&inner_frm_core0, &print_data, &serial_info , &stream_delay);
 }
 
 void setup1() {
   Serial.begin();
   canbuz.reset();
   canbuz.setBitrate(CAN_1000KBPS);
-  /*-------------------- MASK AND FILTER SET--------------------*/
-  canbuz.setFilterMask(MCP2515::MASK0, 0, ID_MASK);
-  //uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag
-  canbuz.setFilter(MCP2515::RXF0, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0));
-  canbuz.setFilter(MCP2515::RXF1, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0)); 
-  canbuz.setFilterMask(MCP2515::MASK1, 0, ID_MASK);
-  canbuz.setFilter(MCP2515::RXF3, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0)); 
-  canbuz.setFilter(MCP2515::RXF2, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0));
-  /*---------------------------------------------------------*/
+  // /*-------------------- MASK AND FILTER SET--------------------*/
+  // canbuz.setFilterMask(MCP2515::MASK0, 0, ID_MASK);
+  // //uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag
+  // canbuz.setFilter(MCP2515::RXF0, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0));
+  // canbuz.setFilter(MCP2515::RXF1, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0)); 
+  // canbuz.setFilterMask(MCP2515::MASK1, 0, ID_MASK);
+  // canbuz.setFilter(MCP2515::RXF3, 0, (uint32_t)encodeCanId(0,BROADCAST,0,0)); 
+  // canbuz.setFilter(MCP2515::RXF2, 0, (uint32_t)encodeCanId(0,myIdentifier,0,0));
+  // /*---------------------------------------------------------*/
   canbuz.setNormalMode();
   //canbuz.setLoopbackMode();
 
@@ -225,7 +235,7 @@ void setup1() {
 void loop1() {
 
   /*---------- CAN BUS RECEPTION AND SENDING ----------*/
-  hermes.process_can_core1(&inner_frm_core1,&canbuz,got_irq);
+  hermes.process_can_core1(&inner_frm_core1, &canbuz, got_irq);
   hermes.recv_msg(&inner_frm_core1);
-  hermes.send_can(&inner_frm_core1,&canbuz); 
+  hermes.send_can(&inner_frm_core1, &canbuz); 
 }

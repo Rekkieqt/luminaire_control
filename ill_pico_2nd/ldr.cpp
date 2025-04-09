@@ -5,11 +5,11 @@
 
 #define n_reads 30
 
-float gamma_ = (CIRC_NUM == 3) ? 0.9545 :
-               (CIRC_NUM == 4) ? 1.1441 : 
+float gamma_ = (CIRC_NUM == 1) ? 0.9545 :
+               (CIRC_NUM == 2) ? 1.1441 : 
                0.0; 
-float R0 = (CIRC_NUM == 3) ? static_cast<float>(300e3*pow(10,gamma_)) :
-           (CIRC_NUM == 4) ? static_cast<float>(200e3*pow(10,gamma_)) : 
+float R0 = (CIRC_NUM == 1) ? static_cast<float>(300e3*pow(10,gamma_)) :
+           (CIRC_NUM == 2) ? static_cast<float>(200e3*pow(10,gamma_)) : 
            0.0;
 
 float G{0};
@@ -38,8 +38,8 @@ float luxmeter(float v){
 
 void get_ldr_params(float cal_params[2]){
   cal_params[0] = gamma_;
-  cal_params[1] = (CIRC_NUM == 3) ? (300000) :
-                  (CIRC_NUM == 4) ? (200000) : 
+  cal_params[1] = (CIRC_NUM == 1) ? (300000) :
+                  (CIRC_NUM == 2) ? (200000) : 
                   0.0; 
 }
 

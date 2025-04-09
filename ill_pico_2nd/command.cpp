@@ -71,7 +71,7 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
             hermes->ser_req(inner_frame,(uint8_t)atoi(token),get_y);
             Serial.print("Request sent to ");Serial.println(atoi(token),HEX);            
           }
-          else if (atoi(token) > 0 && atoi(token) <= maxId) {
+          else if (atoi(token) >= 0 && atoi(token) <= maxId) {
             sprintf(out, "y %d %f", myIdentifier, L);
             Serial.println(out);
           }
@@ -283,10 +283,10 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
       }
       else if (i <= maxId) {
         //hermes->ser_req(msg_to_can* inner_frame, uint8_t req_id, uint8_t req_cmd);
-        hermes->ser_req(inner_frame,(uint8_t)i, set_occ);
+        hermes->ser_req(inner_frame,(uint8_t)i, set_occ, &val, sizeof(val));
         Serial.print("Request sent to ");Serial.println(i,HEX);
       }
-
+      
       break;
     }
     case 's':{

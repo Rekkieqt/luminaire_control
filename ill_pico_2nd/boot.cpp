@@ -69,8 +69,8 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     // Listen for responses for 2 seconds
     startTime = millis();
     while (millis() - startTime < 5000) {
-        if (hermes->recv_msg(inner_frame)) {
-            hermes->process_msg_core0(inner_frame);
+        hermes->recv_msg(inner_frame);
+        if (hermes->process_msg_core0(inner_frame)) {
 
                 decodeCanId(inner_frame->wrapped.can_msg.can_id, zer, zer, zer, flag);
                 if(flag == ACK){++num_ack; Serial.println("Received 1 ACK!"); continue;}
@@ -107,8 +107,8 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
     // //Necessito de enviar um ack
     startTime = millis();
     while(num_ack < bufferSize - 1 && (time_us_64()/1000 - startTime) < THIRTY_SEC ) {
-        if(hermes->recv_msg(inner_frame)){
-            hermes->process_msg_core0(inner_frame);
+        hermes->recv_msg(inner_frame);
+        if(hermes->process_msg_core0(inner_frame)){
             decodeCanId(inner_frame->wrapped.can_msg.can_id, zer, zer, zer, flag);
             num_ack = (flag == ACK) ? ++num_ack : num_ack;
             if(flag==ACK) Serial.println("Received 1 ACK!");
@@ -201,8 +201,8 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
             int a=1;
             idConflict=false;
             while(a<conflicts){
-                if (hermes->recv_msg(inner_frame)) {
-                    hermes->process_msg_core0(inner_frame);
+                hermes->recv_msg(inner_frame);
+                if (hermes->process_msg_core0(inner_frame)) {
                     a++;
                     
                     uint64_t receivedId{0};
@@ -278,8 +278,8 @@ void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {
         int a=1;
         idConflict=false;
         while(a<conflicts){
-            if (hermes->recv_msg(inner_frame)) {
-                hermes->process_msg_core0(inner_frame);
+            hermes->recv_msg(inner_frame);
+            if (hermes->process_msg_core0(inner_frame)) {
                 a++;
                 
                 uint64_t receivedId{0};

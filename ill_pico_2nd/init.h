@@ -18,7 +18,7 @@ extern uint8_t maxId;
 
 #define SAMPLE_TIME 10 // ms
 
-#define CIRC_NUM 3
+#define CIRC_NUM 1
 
 extern bool SERIAL_PRINTS_0;
 extern bool SERIAL_PRINTS_1;
@@ -116,11 +116,11 @@ enum canbus_parameters {
     ID_MASK = 0x38
 };
 
-union msg_to_can { //internal frame between core comunications
+union __attribute__((aligned(4))) msg_to_can { //internal frame between core comunications
     uint8_t in_bytes[20];  
     uint32_t in_msg[5];   
 
-    struct msg_wrap {  // Nested struct
+    struct __attribute__((packed)) msg_wrap {  // Nested struct
         uint8_t internal_msg[4];  // 4 bytes for irq errors and msge between cores
         can_frame can_msg;        // 16 bytes
     } wrapped; // Named instance inside the union

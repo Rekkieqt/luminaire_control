@@ -2,8 +2,9 @@
 #define init_H
 #include <cstdint>
 #include "can.h"
-#include "init.h"
 #include "pid.h"
+#include "optm.h"
+
 extern uint8_t myIdentifier;
 extern uint8_t maxId;
 
@@ -26,6 +27,7 @@ extern bool SERIAL_PRINTS_1;
 
 /*---------- state.h ----------*/
 extern pid PID;
+extern optimizer nice;
 extern bool occ_st;
 
 extern unsigned long last_restart;

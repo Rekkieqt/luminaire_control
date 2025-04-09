@@ -1,7 +1,4 @@
-#include <Arduino.h>
-#include "performance.h"
 #include "comms.h"
-#include "init.h"
 #include "boot.h"
 #include "ldr.h"
 #include "pid.h"
@@ -174,6 +171,20 @@ bool canbus_comm::process_msg_core0(msg_to_can* inner_frame, data_reads* curr_da
                 // do something
                 break;
             case OPTIMIZATION:
+                
+                if (id.header_flag == INPUT_U) {
+                  float lbd{0};
+                  nice.update_u(can_gut.floats[0],id.sender);
+                  if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; if(nice.iterate_dual(lbd)) {PID.set_reference(G*nice.get_sol() + d); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, LAMBDA), &lbd, sizeof(lbd));}}
+                //   Serial.printf("Novo lbd (%d) : %.4f\n", myId, lbd);
+                }
+                else if (id.header_flag == LAMBDA) {
+                  float u{0};
+                  nice.update_lbd(can_gut.floats[0],id.sender);
+                  if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; u = nice.iterate_primal(); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, INPUT_U), &u, sizeof(u));}
+                 // Serial.printf("Novo u (%d) : %.4f\n", myId, u);
+                }
+                memset(&can_gut, 0 , sizeof(can_gut));
                 // required float at can_gut.floats[0];
                 // do something
                 // set read flag and memcopy the values...
@@ -280,12 +291,12 @@ void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus
     float u[2] = {0.2, 0.8};
     float lux[2] = {0.0, 0.0};
     // float lux{0};
-    float dist = luxmeter(get_ldr_voltage(LDR_PIN));
+    d = luxmeter(get_ldr_voltage(LDR_PIN));
     int n_ack{0};
     uint32_t curr_time{0};
     uint16_t can_id;
 
-    Serial.print("Getting Background Disturbance...");Serial.println(dist);
+    Serial.print("Getting Background Disturbance...");Serial.println(d);
     can_id = encodeCanId(myId, BROADCAST, CALIBRATION, ACK);
     send_msg(inner_frame, can_id);
     curr_time = time_us_64()/1000;
@@ -330,6 +341,7 @@ void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus
                 send_msg(inner_frame, can_id);
             }
             cxgains[myId] = (lux[1]-lux[0])/(u[1]-u[0]);
+            G = cxgains[myId];
             Serial.printf("Gain %d->%d = %f\n", n-1, myId, cxgains[n-1]);
             //uint8_t sender, uint8_t receiver, uint8_t task, uint8_t flags
             can_id = encodeCanId(myId, BROADCAST, CALIBRATION, END);

@@ -2,11 +2,10 @@
 #define comms_H
 #include <Arduino.h>
 #include "can.h"
-#include "comms.h"
-#include "ring_buffer.h"
 #include "mcp2515.h"
 #include "init.h"
 #include "performance.h"
+#include "ring_buffer.h"
 
 uint16_t flt_to_16bit(float value);
 float bits_to_flt(uint16_t encoded);

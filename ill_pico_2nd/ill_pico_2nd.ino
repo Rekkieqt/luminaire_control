@@ -1,16 +1,17 @@
 #include <Arduino.h>
 #include <cstdio>
+#include "init.h"
 #include "ldr.h"
 #include "pid.h"
 #include "sim.h"
-#include "command.h"
 #include "performance.h"
 #include "ring_buffer.h"
+#include "can.h"
 #include "mcp2515.h"
 #include "comms.h"
-#include "can.h"
-#include "init.h"
 #include "boot.h"
+#include "command.h"
+#include "optm.h"
 
 uint8_t myIdentifier{0};
 uint8_t maxId{0};
@@ -22,6 +23,7 @@ ring_buffer data_log; //last minute buffer of events
 data_reads current_data, print_data; //data read inside the control sequence
 ser_data serial_info; // for parsing data into hub network
 sim observer;
+optimizer nice;
 
 bool occ_st{UNOCC}; // occupancy state
 
@@ -118,14 +120,14 @@ void setup() {
   analogWriteFreq(WRITE_FREQ);
   analogWriteRange(DAC_RANGE);
   delay(3000);
-  booty.NODE_BOOT(&hermes,&inner_frm_core0);
+  booty.NODE_BOOT(&hermes, &inner_frm_core0);
   myIdentifier = booty.nodeId;
   maxId = booty.num_nodes - 1;
   hermes.set_ntwrk_params(&canbuz);
   hermes.ntwrk_calibration(&inner_frm_core0);
 
   /*---------- GAIN AND PID PARAMETERS ----------*/
-  adjust_gain();
+  //adjust_gain();
   PID.set_system_gain_n_dist(G, d);
   PID.set_reference(occ_st ? PID.r_h : PID.r_l);
   
@@ -139,6 +141,12 @@ void setup() {
 
   //TEMp
   add_repeating_timer_ms( -1, timer_seq, NULL, &write_timer); //temp
+
+  nice.set_cnstr_fn(maxId + 1);
+  float A[4] = {27.2,9.6,16.6,3.6};
+  nice.set_constraints(A, PID.get_reference()-d);
+  float u = nice.iterate_primal();
+  hermes.send_msg(&inner_frm_core0, encodeCanId(myIdentifier,BROADCAST,OPTIMIZATION,INPUT_U), &u, sizeof(u));
 }
 
 void loop() {

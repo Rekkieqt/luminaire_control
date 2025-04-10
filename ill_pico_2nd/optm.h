@@ -16,10 +16,10 @@ void constraint(float& h, const float* x, const float*A, const float b, const in
 class optimizer{
   private:
     int n_consts{0};
-    float *lbd{nullptr}, *u{nullptr}, cost, Q{1}, *A{nullptr}, b{0};
-    float h{0}, prev_h{0}, ascent_gain{4e-3};
+    float *lbd{nullptr}, *u{nullptr}, cost, Q{50}, *A{nullptr}, b{0};
+    float h{0}, prev_h{0}, ascent_gain{4e-3}, u_prev{0};
 
-    float threshold{1e-5};
+    float threshold{1e-10};
 
     void (*constraint_fnc)(float&, const float*, const float*, const float , const int){nullptr};
   public:
@@ -40,8 +40,8 @@ class optimizer{
     float get_sol(void);
     void update_lbd(float new_lbd, uint8_t id);
     void update_u(float new_u, uint8_t id);
-    float iterate_primal(void);
-    bool iterate_dual(float& lbd_);
+    bool iterate_primal(float& u_);
+    float iterate_dual(void);
     float constraint_norm(const float h, const int n_consts);
     void new_ascent_gain(const float h, const float h_prev);
 };

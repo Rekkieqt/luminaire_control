@@ -3,8 +3,6 @@
 
 
 uint8_t total_nodes{static_cast<uint8_t>(maxId + 1)};
-float Q{1};
-float my_cost{1};
 uint8_t my_id{myIdentifier};
 
 void constraint(float& h, const float* x, const float*A, const float b, const int my_id){
@@ -96,7 +94,7 @@ void optimizer::update_u(float new_u, uint8_t id){
   u[id] = new_u;
 }
 
-float optimizer::iterate_primal(void){
+bool optimizer::iterate_primal(float& u_){
   float u_new{0};
   u_new = -cost;
   for(int i = 0; i < n_consts; i++){
@@ -107,8 +105,11 @@ float optimizer::iterate_primal(void){
   if(u_new > 1) u_new = 1;
   u[my_id] = (u[my_id] + u_new)/2;
 
+  if(abs(u[my_id] - u_prev) < threshold && h <= 0) return false;
+  u_ = u[my_id];
+  u_prev = u[my_id];
   Serial.printf("Novo u (%d) : %.4f\n", my_id, u[my_id]);
-  return u[my_id];
+  return true;
 }
 
 
@@ -119,17 +120,15 @@ void optimizer::new_ascent_gain(const float h, const float h_prev){
   else ascent_gain *= b_;
 }
 
-bool optimizer::iterate_dual(float& lbd_){
+float optimizer::iterate_dual(void){
   constraint_fnc(h, u, A, b, my_id);
   new_ascent_gain(h, prev_h);
   Serial.printf("cntr (%d) : %.4f\n", my_id, h);
-  if(h < threshold) return false;
   
   lbd[my_id] += ascent_gain*h;
   if(lbd[my_id] < 0) lbd[my_id] = 0;
-  lbd_ = lbd[my_id];
   prev_h = h;
-  Serial.printf("Novo lbd (%d) : %.4f\n", my_id, lbd_);
-  return true;
+  Serial.printf("Novo lbd (%d) : %.4f\n", my_id, lbd[my_id]);
+  return lbd[my_id];
 }
     

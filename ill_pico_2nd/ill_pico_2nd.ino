@@ -145,7 +145,8 @@ void setup() {
   nice.set_cnstr_fn(maxId + 1);
   float A[4] = {27.2, 9.6, 16.6, 3.6};
   nice.set_constraints(A, PID.get_reference()-d);
-  float u = nice.iterate_primal();
+  float u{0};
+  nice.iterate_primal(u);
   hermes.send_msg(&inner_frm_core0, encodeCanId(myIdentifier,BROADCAST,OPTIMIZATION,INPUT_U), &u, sizeof(u));
 }
 

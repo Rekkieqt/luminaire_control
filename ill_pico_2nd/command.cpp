@@ -255,6 +255,7 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
       if(val < 0) {Serial.println("err"); break;}
       if(i == myIdentifier) {
         PID.set_reference(val); 
+        nice.set_constraints(/*gain matrix*/, PID.get_reference() - d);
         Serial.println("ack");
       }
       else if (i <= maxId) {
@@ -278,6 +279,7 @@ void get_command(float v, float L, float u, float& ener, float& flicker, float& 
       if(i == myIdentifier) {
         occ_st = st; 
         PID.set_reference(ref); 
+        nice.set_constraints(/*gain matrix*/, PID.get_reference() - d);
         Serial.println("ack");
       }
       else if (i <= maxId) {

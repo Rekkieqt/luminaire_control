@@ -2,8 +2,8 @@
 #define init_H
 #include <cstdint>
 #include "can.h"
-#include "init.h"
 #include "pid.h"
+
 extern uint8_t myIdentifier;
 extern uint8_t maxId;
 
@@ -52,10 +52,11 @@ enum static_parameters {
     Fs = 100,     //samplimg frequency
     MSG_SIZE = 9,  // Serial bytes read on commands
     Nfilter = 11, //measuring vout
-    ONE_SEC_MS = 1000, // one second wait in millis
+    ONE_SEC = 1000, // one second wait in millis
     TEN_SEC = 10000, // one second wait in millis
     FIVE_SEC = 5000, // five second wait in millis
-    THIRTY_SEC = 30000 // thirty second wait in millis
+    THIRTY_SEC = 30000, // thirty second wait in millis
+    ONE_MIN = 60000
 };
 
 enum inr_frm_header_types { // type of messages between cores through internal fifo
@@ -73,6 +74,7 @@ enum can_bus_headers { // type of can message
     SER_COM = 0x02, //for serial
     OPTIMIZATION = 0x03, //for consensus control
     STREAM = 0X05,
+    GAIN_STREAM = 0X06,
     // 3 remaining types 
 /*-----------------------------*/
 
@@ -85,15 +87,17 @@ enum can_bus_headers { // type of can message
 /*---------- STREAM SPECIFIC HEADER FLAGS ----------*/
     LUX = 0x02, // for y 
     MIU = 0x03, // for u
+    GAIN = 0x04, // for gains
 /*-----------------------------*/
 /*---------- OPTIMIZATION SPECIFIC HEADER FLAGS ----------*/
     LAMBDA = 0x02, // for lmbd 
     INPUT_U = 0x03, // for u
 /*-----------------------------*/
 /*---------- CALIBRATION SPECIFIC HEADER FLAGS ----------*/
-    START = 0x01, // for y 
-    END = 0x02, // for u
-    UNDEFC = 0x03, // for u
+    MASTER_START_REQ = 0x00, // for  
+    SLAVE_END_ACK = 0x01, // for 
+    MASTER_START_ACK = 0x02, // for 
+    SLAVE_START_ACK = 0x03,
 /*-----------------------------*/
 /*---------- SERIAL SPECIFIC HEADER FLAGS ----------*/
     GETS = 0x01, // for y 
@@ -101,7 +105,7 @@ enum can_bus_headers { // type of can message
     UNDEFS = 0x03, // for u
 /*-----------------------------*/
 /*---------- SPECIAL ADRESSES ----------*/
-    BROADCAST = 0x00 
+    BROADCAST = 0x07 
 /*-----------------------------*/
 };
 
@@ -113,7 +117,7 @@ enum canbus_parameters {
     CSpin = 17,
     INTpin = 20,
     SPIclock = 10000000,
-    ID_MASK = 0x38
+    ID_MASK = 0x07
 };
 
 union __attribute__((aligned(4))) msg_to_can { //internal frame between core comunications
@@ -162,6 +166,15 @@ union can_data_decoder {   //can data decoding
     uint64_t eight_bytes;   
     float floats[2];   
     int ints[2];   
+};
+
+enum special_cal_flags {
+    master_req_start = 0x01,
+    master_end_cal,
+    master_end_state,
+    slave_ack_start,
+    slave_ack_read,
+    slave_ack_state 
 };
 
 enum serial_canbus_requests {

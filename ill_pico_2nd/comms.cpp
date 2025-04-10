@@ -175,12 +175,14 @@ bool canbus_comm::process_msg_core0(msg_to_can* inner_frame, data_reads* curr_da
                 if (id.header_flag == INPUT_U) {
                   float lbd{0};
                   nice.update_u(can_gut.floats[0],id.sender);
+                  Serial.printf("Received u (%d) : %.4f\n", id.sender, can_gut.floats[0]);
                   if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; if(nice.iterate_dual(lbd)) {PID.set_reference(G*nice.get_sol() + d); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, LAMBDA), &lbd, sizeof(lbd));}}
                 //   Serial.printf("Novo lbd (%d) : %.4f\n", myId, lbd);
                 }
                 else if (id.header_flag == LAMBDA) {
                   float u{0};
                   nice.update_lbd(can_gut.floats[0],id.sender);
+                  Serial.printf("Received lbd (%d) : %.4f\n", id.sender, can_gut.floats[0]);
                   if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; u = nice.iterate_primal(); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, INPUT_U), &u, sizeof(u));}
                  // Serial.printf("Novo u (%d) : %.4f\n", myId, u);
                 }

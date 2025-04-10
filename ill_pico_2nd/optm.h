@@ -16,8 +16,8 @@ void constraint(float& h, const float* x, const float*A, const float b, const in
 class optimizer{
   private:
     int n_consts{0};
-    float *lbd{nullptr}, *u{nullptr}, cost, Q{1e-2}, *A{nullptr}, b{0};
-    float h{0}, prev_h{0}, ascent_gain{1e-3};
+    float *lbd{nullptr}, *u{nullptr}, cost, Q{1}, *A{nullptr}, b{0};
+    float h{0}, prev_h{0}, ascent_gain{4e-3};
 
     float threshold{1e-5};
 

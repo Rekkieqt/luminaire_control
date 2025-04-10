@@ -1,7 +1,6 @@
-#include "ring_buffer.h"
 #include <Arduino.h>
 #include <cstring>
-#include "init.h"
+#include "ring_buffer.h"
 
 
 ring_buffer::ring_buffer() {}

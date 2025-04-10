@@ -1,7 +1,4 @@
-#include <Arduino.h>
-#include "performance.h"
 #include "comms.h"
-#include "init.h"
 #include "boot.h"
 #include "ldr.h"
 #include "pid.h"
@@ -214,6 +211,22 @@ bool canbus_comm::process_msg_core0(msg_to_can* inner_frame, data_reads* curr_da
                 // do something
                 break;
             case OPTIMIZATION:
+                
+                if (id.header_flag == INPUT_U) {
+                  float lbd{0};
+                  nice.update_u(can_gut.floats[0],id.sender);
+                  Serial.printf("Received u (%d) : %.4f\n", id.sender, can_gut.floats[0]);
+                  if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; if(nice.iterate_dual(lbd)) {PID.set_reference(G*nice.get_sol() + d); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, LAMBDA), &lbd, sizeof(lbd));}}
+                //   Serial.printf("Novo lbd (%d) : %.4f\n", myId, lbd);
+                }
+                else if (id.header_flag == LAMBDA) {
+                  float u{0};
+                  nice.update_lbd(can_gut.floats[0],id.sender);
+                  Serial.printf("Received lbd (%d) : %.4f\n", id.sender, can_gut.floats[0]);
+                  if(++nice.n_replies == NUM_NODES - 1) {nice.n_replies = 0; u = nice.iterate_primal(); send_msg(inner_frame, encodeCanId(myId, BROADCAST, OPTIMIZATION, INPUT_U), &u, sizeof(u));}
+                 // Serial.printf("Novo u (%d) : %.4f\n", myId, u);
+                }
+                memset(&can_gut, 0 , sizeof(can_gut));
                 // required float at can_gut.floats[0];
                 // do something
                 // set read flag and memcopy the values...
@@ -323,6 +336,7 @@ void canbus_comm::ser_req(msg_to_can* inner_frame, uint8_t req_id, uint8_t req_c
 void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus, send to core 0 through fifo, maybe do sum if necessary
     float u[2] = {0.8, 0.2};
     float lux{0};
+    d = luxmeter(get_ldr_voltage(LDR_PIN));
     uint8_t flag{0};
     uint16_t k_ack{0};
     uint16_t can_id;

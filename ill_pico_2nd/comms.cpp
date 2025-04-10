@@ -411,6 +411,7 @@ void canbus_comm::ntwrk_calibration(msg_to_can* inner_frame) { //receive can bus
                 k_ack = 0; 
                 analogWrite(LED_PIN, 0);
                 cxgains[n] = cxgains[n] + lux/(u[1]- u[0]);
+                G = cxgains[n];
                 Serial.print("Calibrated my g ");Serial.println(cxgains[n]);
             }
             // ---------------------------------------------------------------------------

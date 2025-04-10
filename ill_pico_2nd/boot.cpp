@@ -11,16 +11,22 @@ boot::~boot() {
 uint16_t encodeCanId(uint8_t sender, uint8_t receiver, uint8_t header, uint8_t header_flag) {
     return ((header_flag & 0x03) << 9) |   // 2 bits for flags
            ((header & 0x07) << 6)  |   // 3 bits for task
-           ((receiver & 0x07) << 3) | // 3 bits for receiver
-           (sender & 0x07);          // 3 bits for sender
+           (sender & 0x07) << 3    |      // 3 bits for sender
+           (receiver & 0x07); // 3 bits for receiver
+
+        //    ((receiver & 0x07) << 3) | // 3 bits for receiver
+        //    (sender & 0x07);          // 3 bits for sender
 }
 
 // CAN ID Decoding Function
 void decodeCanId(uint16_t canId, uint8_t &sender, uint8_t &receiver, uint8_t &header, uint8_t &header_flag) {
     header_flag = (canId >> 9) & 0x03;
     header = (canId >> 6) & 0x07;
-    receiver = (canId >> 3) & 0x07;
-    sender = canId & 0x07;
+    sender = (canId >> 3) & 0x07;
+    receiver = canId & 0x07;
+
+    // receiver = (canId >> 3) & 0x07;
+    // sender = canId & 0x07;
 }
 
 void boot::NODE_BOOT(canbus_comm* hermes, msg_to_can* inner_frame) {

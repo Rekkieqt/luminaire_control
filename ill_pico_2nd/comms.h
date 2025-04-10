@@ -20,6 +20,7 @@ class canbus_comm
     uint8_t myId{myIdentifier};
     uint16_t NUM_NODES{2};
     float * cxgains{nullptr};
+    float * gmatrix{nullptr};
     //uint64_t can_data;
     //stream vars
     bool stream_check_u{false};
@@ -50,6 +51,7 @@ class canbus_comm
     void set_masks_n_filters(MCP2515* can);
 
     void opt_send(msg_to_can* inner_frame, uint8_t req_id, uint8_t req_param, void* val, size_t bytes);
+    void cross_gains_sync(msg_to_can* inner_frame);
 };
 
 

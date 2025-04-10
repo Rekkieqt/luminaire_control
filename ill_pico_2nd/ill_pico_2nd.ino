@@ -125,7 +125,7 @@ void setup() {
   maxId = booty.num_nodes - 1;
   hermes.set_ntwrk_params(&canbuz);
   hermes.ntwrk_calibration(&inner_frm_core0);
-
+  hermes.cross_gains_sync(&inner_frm_core0);
   /*---------- GAIN AND PID PARAMETERS ----------*/
   //adjust_gain();
   PID.set_system_gain_n_dist(G, d);
@@ -136,11 +136,6 @@ void setup() {
   
   /*---------- CONTROL INT SETUP ----------*/
   add_repeating_timer_ms( -SAMPLE_TIME, control_seq, NULL, &pid_timer); //100 Hz
-
-  /*---------- SPINLOCK/MUTEX ----------*/
-
-  //TEMp
-  add_repeating_timer_ms( -1, timer_seq, NULL, &write_timer); //temp
 
   nice.set_cnstr_fn(maxId + 1);
   float A[4] = {27.2, 9.6, 16.6, 3.6};
@@ -208,14 +203,6 @@ void loop() {
   /*------------------------------ SERIAL RECEIVER ------------------------------*/
 
   if(Serial.available()) get_command(v, print_data.out, print_data.u, ener, flicker, vis_err, N, &data_log, &hermes, &inner_frm_core0);
-
-  /*---------- CAN BUS FRAME SENDING / FIFO FRAME RECEPTION ----------*/
-  if(time_to_write) {
-    time_to_write = false;
-    //comment for no sending 
-    //msg_to_can* inner_frame, uint16_t canm_id, void* data = nullptr ,size_t size_data = 0
-    //hermes.send_msg(&inner_frm_core0, node_id, &(counter++), sizeof(counter));
-  }
 /*--------------------------------------------------------------------*/
   hermes.recv_msg(&inner_frm_core0);
   hermes.process_msg_core0(&inner_frm_core0, &print_data, &serial_info , &stream_delay);
